@@ -1,0 +1,364 @@
+const Student = require("../models/student");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const Company = require("../models/company");
+const File = require("../models/file");
+const crypto = require("crypto");
+const nodeMailer = require("nodemailer");
+const multer = require("multer");
+const fs = require("fs-extra");
+const path = require("path");
+
+let upload = multer({
+  storage: multer.diskStorage({
+    destination: async (req, file, cb) => {
+      // ** code for making directory using company ID make sure to change schema of file.js
+      let companyId = req.params.companyId;
+      let company = await Company.findById(companyId);
+      req.company = company;
+      if (!company) {
+        throw Error("Company cannot be found!");
+      }
+      company = company.name;
+      let path = `./uploads/${company}`;
+      if (!fs.existsSync(path)) {
+        fs.mkdirSync(path);
+      }
+      cb(null, path);
+    },
+    filename: async (req, file, cb) => {
+      //  ** with student auth Code
+      let studentId = req.student.id;
+      console.log(studentId);
+      let student = await Student.findById(studentId);
+      if (!student) {
+        throw Error("Student cannot be found!");
+      }
+      let filename = student.pictRegistrationId;
+      req.filename = filename;
+      cb(null, filename + path.extname(file.originalname));
+    },
+  }),
+}).single("resume");
+
+const handleErrors = (err) => {
+  let errors = { name: "", phone: "", email: "", password: "" };
+
+  // incorrect email
+  if (err.message === "Incorrect Email") {
+    errors.email = "This email is not registered";
+  }
+
+  // incorrect password
+  if (err.message === "Incorrect Password") {
+    errors.password = "This password is not registered";
+  }
+
+  // duplicate error code
+  if (err.code == 11000) {
+    errors.email = "that email existed earlier";
+  }
+
+  // validation errors
+  if (err.message.includes("Student validation failed")) {
+    Object.values(err.errors).forEach(({ properties }) => {
+      errors[properties.path] = properties.message;
+    });
+  }
+
+  return errors;
+};
+
+const tokenAge = parseInt(process.env.JWT_AGE);
+
+const createToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: tokenAge,
+  });
+};
+
+// login student
+module.exports.login_student = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const student = await Student.login(email, password);
+    const token = createToken(student._id);
+    res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
+    res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000 });
+    res.status(200).send({ student, success: true });
+  } catch (err) {
+    const errors = handleErrors(err);
+    res.status(400).json({ errors, success: false });
+  }
+};
+
+// logout student
+module.exports.logout_student = (req, res) => {
+  req.student._id = "";
+  res.cookie("token", "", { maxAge: 1 });
+  res.cookie("usertype", "", { maxAge: 1 });
+  res.send({ success: true, message: "Student Logged Out." });
+};
+
+// student profile
+module.exports.student_profile = async (req, res) => {
+  try {
+    const student = await Student.findById(req.student.id);
+    res.status(200).json({ student, success: true });
+  } catch {
+    res.status(400).json({ success: false, message: "Login or Signup" });
+  }
+};
+
+module.exports.drive_compaines = async (req, res) => {
+  try {
+    const date = new Date().toISOString();
+    const companyList = await Company.find();
+    // const companyList = await Company.find({
+    //   $and: [{ startDate: { $lte: date } }, { endDate: { $gte: date } }],
+    // });
+    // const companyList = await Company.find({ driveEnd: { $eq: false } });
+    res.status(200).json({
+      success: true,
+      message: "current companies drive",
+      data: companyList,
+    });
+  } catch (error) {
+    res
+      .status(400)
+      .json({ success: false, message: "Error while get company list" });
+  }
+};
+
+module.exports.apply_company = async (req, res) => {
+  try {
+    // studentApplyForCompanies later - companyid take from req.body._id
+    const company = await Company.findOne({ _id: req.body.companyId });
+
+    if (!company) {
+      return res
+        .status(403)
+        .json({ success: false, message: "No such Company exist" });
+    }
+
+    // handle start and endDate logic: FRONTEND
+
+    // finding if student already exists in company's appliedStudents array
+    const studentExists = await Company.findOne({
+      $and: [
+        { "_id": req.body.companyId },
+        { "appliedStudents.studentId": req.student.id },
+      ],
+    });
+
+    if (studentExists) {
+      return res.status(400).json({
+        success: false,
+        message: "You are already applied to this company",
+      });
+    }
+
+    // let frontend handle the gte 20 c.t.c. part
+
+    // currentRound and finalResult are by default stored 0 and false in db
+    const student = await Student.findById(req.student.id);
+
+    student.appliedCompanies.push({
+      companyId: company.id,
+      name: company.name,
+      totalRounds: company.totalRounds,
+    });
+
+    company.appliedStudents.push({
+      studentId: student.id,
+      email: student.email,
+    });
+
+    // not used {validateBeforeSave:false}
+    await company.save();
+    await student.save();
+
+    // here sending company.appliedStudents only for testing
+    return res.status(200).json({
+      success: true,
+      message: "You've Successfully applied to this company",
+    });
+  } catch (err) {
+    return res.send(err);
+  }
+};
+
+// student reset Password
+module.exports.student_reset_password = async (req, res) => {
+  //passing in query not in params
+  console.log('query', req.query);
+  // console.log()
+
+  const student = await Student.findOne({ _id: req.query.id });
+  const isValid = await bcrypt.compare(
+    req.query.token,
+    student.resetPasswordToken
+  );
+
+  console.log('isValid', isValid);
+
+  if (!isValid) {
+    res.send("Reset password token is invalid or has been expired", 400);
+  }
+
+  student.password = req.body.newPassword;
+  student.resetPasswordToken = undefined;
+  student.resetPasswordExpire = undefined;
+
+  await student.save();
+
+  //JWT_SECRET is a string -> parse it to integer
+  const token = jwt.sign({ id: student._id }, process.env.JWT_SECRET, {
+    expiresIn: parseInt(process.env.UPDATE_PASSWORD_AGE),
+  });
+
+  // option for cookie
+  const options = {
+    expires: new Date(
+      Date.now() + parseInt(process.env.UPDATE_PASSWORD_AGE) * 1000 //1000 for milliseconds
+    ),
+    httpOnly: true,
+  };
+
+  res.status(200).cookie("token", token, options).json({
+    success: true,
+    student,
+    token,
+  });
+};
+
+module.exports.student_forgot_password = async (req, res) => {
+  const student = await Student.findOne({ email: req.body.email });
+
+  if (!student) {
+    res.status(404).send("student not found");
+  }
+
+  // generating token
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  //generates salt
+  const salt = await bcrypt.genSalt(8);
+
+  const resetPasswordToken = await bcrypt.hash(resetToken, salt);
+
+  //storing HASHED password in student db, not token
+  student.resetPasswordToken = resetPasswordToken;
+
+  student.resetPasswordExpire = Date.now() + 15 * 60 * 1000; //15 minutes from now
+
+  await student.save({ validateBeforeSave: false });
+  // console.log('student after saving', student);
+  // console.log("resetToken", resetToken);
+  // now send email
+  // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/resetPassword?token=${resetToken}&id=${user._id}`;
+  const resetPasswordUrl = `http://localhost:3000/student/password/reset/${resetToken}/${student.id}`;
+
+  // const message = `Your reset password token is:- \n\n <form action=${resetPasswordUrl} method="post">
+  //     <input type="text" name="newPassword2" placeholder="Enter New password" />
+  // <button type="submit">Click</button></form> \n\n If you have not requested this mail then please contact PICT TnP cell`;
+
+  const message = `Your reset password token is:- \n\n <a href=${resetPasswordUrl}>click here</a> \n\n If you have not reque`;
+
+  const transporter = nodeMailer.createTransport({
+    service: process.env.SMTP_SERVICE,
+    auth: {
+      user: process.env.SMTP_MAIL,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+
+  try {
+    let info = await transporter.sendMail({
+      from: process.env.SMTP_SERVICE,
+      to: student.email,
+      subject: "Password Recovery checking 1",
+      // text: message,
+      html: message,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Email send to ${student.email} successfully`,
+    });
+
+    // console.log("Message sent: %s", info.messageId);
+  } catch (error) {
+    student.resetPasswordToken = undefined;
+    student.resetPasswordToken = undefined;
+    await student.save({ validateBeforeSave: false });
+
+    console.log(error);
+  }
+};
+
+// student reset Password
+module.exports.student_update_password = async (req, res) => {
+  const student = await Student.findById(req.student.id);
+
+  const isPasswordMatched = await bcrypt.compare(
+    req.body.oldPassword,
+    student.password
+  );
+
+  if (!isPasswordMatched) {
+    return res.status(403).send("Passwords do not match");
+  }
+
+  // frontend compare newpassword with confirm password
+
+  student.password = req.body.newPassword;
+
+  await student.save();
+
+  // option for cookie
+  const options = {
+    expires: new Date(
+      Date.now() + parseInt(process.env.UPDATE_PASSWORD_AGE) * 1000 //1000 for milliseconds
+    ),
+    httpOnly: true,
+  };
+
+  res.status(200).cookie("token", options).json({
+    success: true,
+    student,
+  });
+};
+
+module.exports.resume_upload = async (req, res) => {
+  upload(req, res, async () => {
+    try {
+      const file = await File.create({
+        student_id: req.student.id,
+        company_id: req.params.companyId,
+        file_path: `./uploads/${req.company.name}/${req.filename}.pdf`,
+      });
+      console.log(file);
+      res.status(201).json({ message: "Resume uploaded Successfully" });
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+      // ** code for resume-upload using student authentication middleware
+      if (fs.existsSync(`./uploads/${req.company.name}/${req.filename}.pdf`)) {
+        fs.unlink(`./uploads/${req.params.companyId}/${req.filename}.pdf`);
+      }
+    }
+  });
+};
+
+module.exports.company_detials = async (req, res) => {
+  try {
+    const company = await Company.findById(req.params.companyId);
+    if (!company) {
+      return res.status(400).json({ success: false, message: "Company Not Found" });
+    }
+
+    return res.status(200).json({ success: true, message: "Company Found", data: company });
+  } catch (err) {
+    res.status(400).json({ errors: err, success: false });
+  }
+}
