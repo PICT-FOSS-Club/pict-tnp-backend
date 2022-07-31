@@ -28,7 +28,7 @@ let upload = multer({
     },
     filename: async (req, file, cb) => {
       //  ** with student auth Code
-      let studentId = req.student.id;
+      let studentId = req.student._id;
       console.log(studentId);
       let student = await Student.findById(studentId);
       if (!student) {
@@ -99,7 +99,6 @@ module.exports.login_student = async (req, res) => {
       const isMatch = await bcrypt.compare(password, student.password);
       // token = createToken(student._id);
       token = await student.generateAuthToken()
-      console.log('student token', token)
       if (isMatch) {
         res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) }); //30 days expiry
         res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) });
@@ -333,7 +332,7 @@ module.exports.student_forgot_password = async (req, res) => {
 
 // student reset Password
 module.exports.student_update_password = async (req, res) => {
-  const student = await Student.findById(req.student.id);
+  const student = await Student.findById(req.student._id);
 
   const isPasswordMatched = await bcrypt.compare(
     req.body.oldPassword,
@@ -350,25 +349,14 @@ module.exports.student_update_password = async (req, res) => {
 
   await student.save();
 
-  // option for cookie
-  const options = {
-    expires: new Date(
-      Date.now() + parseInt(process.env.UPDATE_PASSWORD_AGE) * 1000 //1000 for milliseconds
-    ),
-    httpOnly: true,
-  };
-
-  res.status(200).cookie("token", options).json({
-    success: true,
-    student,
-  });
+  res.status(200).json({ success: true, message: "Password Updated." });
 };
 
 module.exports.resume_upload = async (req, res) => {
   upload(req, res, async () => {
     try {
       const file = await File.create({
-        student_id: req.student.id,
+        student_id: req.student._id,
         company_id: req.params.companyId,
         file_path: `./uploads/${req.company.name}/${req.filename}.pdf`,
       });

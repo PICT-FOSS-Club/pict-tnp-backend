@@ -80,7 +80,6 @@ module.exports.login_admin = async (req, res) => {
     if(admin){
       const isMatch = await bcrypt.compare(password, admin.password);
       token = await admin.generateAuthToken();
-      console.log('admin token', token);
       if(isMatch){
         res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) }); // 30 days
         res.cookie("usertype", "admin", { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) });
@@ -109,7 +108,7 @@ module.exports.logout_admin = (req, res) => {
 // upate password
 module.exports.admin_update_password = async (req, res) => {
 
-  const admin = await Admin.findById(req.admin.id);
+  const admin = await Admin.findById(req.admin._id);
 
   const isPasswordMatched = await bcrypt.compare(
     req.body.oldPassword,
@@ -126,19 +125,7 @@ module.exports.admin_update_password = async (req, res) => {
 
   await admin.save();
 
-  // option for cookie
-  const options = {
-    expires: new Date(
-      Date.now() + parseInt(process.env.UPDATE_PASSWORD_AGE) * 1000 //1000 for milliseconds
-    ),
-    httpOnly: true,
-  };
-
-  res.status(200).cookie("token", options).json({
-    success: true,
-    admin,
-  });
-
+  res.status(200).json({ success: true, message: "Password Updated." });
 }
 
 // admin reset Password
@@ -428,3 +415,23 @@ module.exports.get_dashboard_details = async (req, res) => {
     res.status(400).json({ errors: err, success: false });
   }
 }
+
+module.exports.get_company_round_applied_students = async (req, res) => {
+  try {
+    const studentList = await Company.find({ _id: req.params.companyId, 'appliedCompanies.roundCleared': { $gte: req.params.number }});
+    res. status(200).json({ success: true, studentList})
+  }
+  catch (err) {
+    res.status(400).json({ success: false, errors: err});
+  }
+} 
+
+module.exports.get_company_round_qualified_students = async (req, res) => {
+  try {
+    const studentList = await Student.find({ _id: req.student._id, 'appliedCompanies.companyId': {$eq: req.params.companyId}, currentRound: { $gte: req.params.number }});
+    res. status(200).json({ success: true, studentList})
+  }
+  catch (err) {
+    res.status(400).json({ success: false, errors: err});
+  }
+} 
