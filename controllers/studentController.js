@@ -128,7 +128,7 @@ module.exports.logout_student = (req, res) => {
 // student profile
 module.exports.student_profile = async (req, res) => {
   try {
-    const student = await Student.findById(req.student.id);
+    const student = await Student.findById(req.student._id);
     res.status(200).json({ student, success: true });
   } catch {
     res.status(400).json({ success: false, message: "Login or Signup" });
@@ -159,7 +159,6 @@ module.exports.apply_company = async (req, res) => {
   try {
     // studentApplyForCompanies later - companyid take from req.body._id
     const company = await Company.findById(req.body.companyId);
-    console.log(company)
     if (!company) {
       return res
         .status(403)
