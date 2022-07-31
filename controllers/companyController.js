@@ -6,6 +6,7 @@ module.exports.apply_drive = async (req, res) => {
     const company = req.body;
     try {
         await Company.create(company);
+        console.log('company',company)
         res.status(200).json({ success: true, message: "Company Drive Added Successfully." });
     }
     catch(err) {
@@ -103,7 +104,7 @@ module.exports.rounds_result = async (req, res) => {
                     console.log(error);
                     res.status(500).json({message: 'ERROR SENDING MAIL !!!'});
                 } else { 
-                    console.log("Sent!");
+                    console.log("Sent! ", data.response, " messageId: ",data.messageId);
                     res.status(200).json({message: 'NOTIFICATION MAIL SENT !!!'});
                 }
               });
@@ -133,7 +134,7 @@ module.exports.rounds_result = async (req, res) => {
                     console.log(error);
                     res.status(500).json({message: 'ERROR SENDING MAIL !!!'});
                 } else { 
-                    console.log("Sent!");
+                    console.log("Sent!", data.response, " messageId: ",data.messageId);
                     res.status(200).json({message: 'NOTIFICATION MAIL SENT !!!'});
                 }
               });
@@ -142,9 +143,9 @@ module.exports.rounds_result = async (req, res) => {
             console.log('err in rounds_result', err);
         }
 
-        res.status(200).json({ success: true, message: "Result Updated Successfully " });
+        res.status(200).json({ success: true, message: "Result Updated Successfully"});
     }
     catch {
-        res.status(400).json({ success: false, message: "Error while updating the company details." });
+        res.status(400).json({ success: false, message: "Error while updating the company details."});
     }
 }

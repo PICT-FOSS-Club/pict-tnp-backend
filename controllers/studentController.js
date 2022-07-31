@@ -136,9 +136,7 @@ module.exports.apply_company = async (req, res) => {
     const company = await Company.findOne({ _id: req.body.companyId });
 
     if (!company) {
-      return res
-        .status(403)
-        .json({ success: false, message: "No such Company exist" });
+      return res.status(403).json({ success: false, message: "No such Company exist" });
     }
 
     // handle start and endDate logic: FRONTEND
@@ -203,7 +201,7 @@ module.exports.student_reset_password = async (req, res) => {
   console.log('isValid', isValid);
 
   if (!isValid) {
-    res.send("Reset password token is invalid or has been expired", 400);
+    return res.status(400).json({success:false,msg:"Reset password token is invalid or has been expired"});
   }
 
   student.password = req.body.newPassword;
@@ -236,7 +234,7 @@ module.exports.student_forgot_password = async (req, res) => {
   const student = await Student.findOne({ email: req.body.email });
 
   if (!student) {
-    res.status(404).send("student not found");
+    return res.status(404).send("student not found");
   }
 
   // generating token
@@ -280,20 +278,27 @@ module.exports.student_forgot_password = async (req, res) => {
       subject: "Password Recovery checking 1",
       // text: message,
       html: message,
+    }, function (err, info) {
+      if (err) throw err;
+      console.log('response:', info.response, " Message sent: %s", info.messageId);
+      // 250 Requested mail action okay, completed
+      res.status(250).json({
+        success: true,
+        message: `Email send to ${student.email} successfully`,
+      });
     });
 
-    res.status(200).json({
-      success: true,
-      message: `Email send to ${student.email} successfully`,
-    });
+    // res.status(200).json({
+    //   success: true,
+    //   message: `Email send to ${student.email} successfully`,
+    // });
 
     // console.log("Message sent: %s", info.messageId);
   } catch (error) {
     student.resetPasswordToken = undefined;
     student.resetPasswordToken = undefined;
     await student.save({ validateBeforeSave: false });
-
-    console.log(error);
+    console.log('error in student forgot pass', error);
   }
 };
 

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const  {validator, isEmail, isURL } = require("validator");
+const { validator, isEmail, isURL } = require("validator");
 
 const companySchema = new mongoose.Schema({
     name: {
@@ -24,8 +24,8 @@ const companySchema = new mongoose.Schema({
         unique: true, //as email needs to be unique
         validate: [isEmail, 'Please enter a valid email']
     },
-    companyLocation : {
-        type : String,
+    companyLocation: {
+        type: String,
     },
     totalRounds: {
         type: Number,
@@ -35,13 +35,13 @@ const companySchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    startDate : {
-        type : Date,
-        required : [true, 'Enter Start date for Applying']
+    startDate: {
+        type: Date,
+        required: [true, 'Enter Start date for Applying']
     },
-    endDate : {
-        type : Date,
-        required : [true, 'Enter End date for Applying'],
+    endDate: {
+        type: Date,
+        required: [true, 'Enter End date for Applying'],
     },
     criteria: {
         branch: {

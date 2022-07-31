@@ -136,7 +136,7 @@ module.exports.admin_reset_password = async (req, res) => {
   );
 
   if (!isValid) {
-    res.send("Reset password token is invalid or has been expired", 400);
+    return res.send("Reset password token is invalid or has been expired", 400);
   }
 
   admin.password = req.body.newPassword;
@@ -170,7 +170,7 @@ module.exports.admin_forgot_password = async (req, res) => {
   const admin = await Admin.findOne({ email: req.body.email });
 
   if (!admin) {
-    res.status(404).send("admin not found");
+    return res.status(404).send("admin not found");
   }
 
   // generating token
@@ -211,14 +211,19 @@ module.exports.admin_forgot_password = async (req, res) => {
       subject: "Password Recovery checking Admin",
       // text: message,
       html: message,
+    }, function (err, info) {
+      if (err) throw err;
+      console.log('response:', info.response, " Message sent: %s",info.messageId);
+      // 250 Requested mail action okay, completed
+      res.status(250).json({
+        success: true,
+        message: `Email send to ${admin.email} successfully`,
+      });
     });
 
-    res.status(200).json({
-      success: true,
-      message: `Email send to ${admin.email} successfully`,
-    });
+    // res.status(200).json({success: true,message: `Email send to ${admin.email} successfully`,});
 
-    console.log("Message sent: %s", info.messageId);
+    // console.log("Message sent: %s", info.messageId);
   } catch (error) {
     admin.resetPasswordToken = undefined;
     admin.resetPasswordToken = undefined;
@@ -256,12 +261,17 @@ module.exports.register_student = async (req, res) => {
         to: newStudent.email,
         subject: 'Student Account created',
         html: message
+      }, function (err, info) {
+        if (err) throw err;
+        console.log('status:', info.response, " Message sent: %s",info.messageId);
+        // 250 Requested mail action okay, completed
+        res.status(250).json({
+          success: true,
+          message: `Email send to ${newStudent.email} successfully`,
+        });
       });
 
-      res.status(200).json({
-        success: true,
-        message: `Email send to ${newStudent.email} successfully`,
-      });
+      // res.status(200).json({success: true,message: `Email send to ${newStudent.email} successfully`,});
     } catch (err) {
       console.log('err', err);
     }
@@ -278,6 +288,7 @@ module.exports.register_students = async (req, res) => {
   const students = req.body;
   let array = [];
   try {
+
     students.forEach(async (student) => {
       await Student.create(student);
     });
@@ -302,22 +313,33 @@ module.exports.register_students = async (req, res) => {
       from: process.env.SMTP_SERVICE,
       to: array,
       subject: 'Final checking Latest',
-      text: message
+      html: message
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log('Error in sending mail:', error);
-        return;
-      } else {
-        console.log('Mail send:', info.response);
-      }
-    })
-    res.status(201).json({ success: true, message: "All Students Registered Successfully." });
+    // send response in another function after mailOptions else gives cant set headers after they're sent to the client error
+    try {
+      let info = await transporter.sendMail(mailOptions, function (err, info) {
+        if (err) throw err;
+        console.log('status: ', info.response, " Message sent: %s",info.messageId);
+        // 250 Requested mail action okay, completed
+        res.status(250).json({
+          success: true,
+          message: `Email send to ${array} successfully`,
+        });
+      });
+    } catch (err) {
+      console.log('err in coll reg', err);
+    }
+    
+    // here dont send res as it gives cant set headers after they're sent to the client 
+    // res.status(200).json({success: true,message: `Email send to ${array} successfully`,});
+    // res.status(201).send({ success: true, message: "All Students Registered Successfully." });
+
   }
   catch (err) {
-    const errors = handleErrors(err);
+    // const errors = handleErrors(err);
     res.status(400).json({ errors, success: false })
+    // console.log('err in last clasuse', err)
   }
 };
 
@@ -366,11 +388,11 @@ module.exports.get_all_students = async (req, res) => {
 }
 
 module.exports.get_dashboard_details = async (req, res) => {
-  try{
+  try {
     const companyList = await Company.find();
     const dashboard_details = {
       totalStudents: (await Student.find()).length,
-      placedStudents: (await Student.find({ $or: [ { isLTE20: { $eq: true } }, { isGT20: { $eq: true } } ] })).length,
+      placedStudents: (await Student.find({ $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }] })).length,
       unplacedStudents: 0,
       totalCompanies: companyList.length,
       averageCTC: 0
@@ -379,10 +401,10 @@ module.exports.get_dashboard_details = async (req, res) => {
     dashboard_details.unplacedStudents = dashboard_details.totalStudents - dashboard_details.placedStudents;
 
     let sumOfCTC = 0;
-    for(const company of companyList){
+    for (const company of companyList) {
       sumOfCTC += (company.ctc);
     }
-    dashboard_details.averageCTC = sumOfCTC/companyList.length;
+    dashboard_details.averageCTC = sumOfCTC / companyList.length;
     res.status(200).json({ success: true, dashboard_details });
   }
   catch (err) {
