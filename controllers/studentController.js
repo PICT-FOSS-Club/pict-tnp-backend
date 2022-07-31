@@ -71,21 +71,46 @@ const handleErrors = (err) => {
 
 const tokenAge = parseInt(process.env.JWT_AGE);
 
-const createToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: tokenAge,
-  });
-};
+// const createToken = (id) => {
+//   return jwt.sign({ id }, process.env.JWT_SECRET, {
+//     expiresIn: tokenAge,
+//   });
+// };
 
 // login student
 module.exports.login_student = async (req, res) => {
+  // const { email, password } = req.body;
+  // try {
+  //   const student = await Student.login(email, password);
+  //   const token = createToken(student._id);
+  //   res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
+  //   res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000 });
+  //   res.status(200).send({ student, success: true });
+  // } catch (err) {
+  //   const errors = handleErrors(err);
+  //   res.status(400).json({ errors, success: false });
+  // }
   const { email, password } = req.body;
   try {
-    const student = await Student.login(email, password);
-    const token = createToken(student._id);
-    res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
-    res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000 });
-    res.status(200).send({ student, success: true });
+    let token;
+    // const student = await Student.login(email, password);
+    const student = await Student.findOne({ email: email });
+    if (student) {
+      const isMatch = await bcrypt.compare(password, student.password);
+      // token = createToken(student._id);
+      token = await student.generateAuthToken()
+      console.log('student token', token)
+      if (isMatch) {
+        res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) }); //30 days expiry
+        res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) });
+        res.status(200).send({ student, success: true });
+      } else {
+        res.status(400).json({ error: "invalid creds" });
+      }
+    }
+    else {
+      res.status(400).json({ error: "invalid creds" });
+    }
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors, success: false });
@@ -133,10 +158,12 @@ module.exports.drive_compaines = async (req, res) => {
 module.exports.apply_company = async (req, res) => {
   try {
     // studentApplyForCompanies later - companyid take from req.body._id
-    const company = await Company.findOne({ _id: req.body.companyId });
-
+    const company = await Company.findById(req.body.companyId);
+    console.log(company)
     if (!company) {
-      return res.status(403).json({ success: false, message: "No such Company exist" });
+      return res
+        .status(403)
+        .json({ success: false, message: "No such Company exist" });
     }
 
     // handle start and endDate logic: FRONTEND
@@ -144,10 +171,12 @@ module.exports.apply_company = async (req, res) => {
     // finding if student already exists in company's appliedStudents array
     const studentExists = await Company.findOne({
       $and: [
-        { "_id": req.body.companyId },
-        { "appliedStudents.studentId": req.student.id },
+        { _id: req.body.companyId },
+        { "appliedStudents.studentId": req.student._id },
       ],
     });
+
+    // console.log("stu", studentExists)
 
     if (studentExists) {
       return res.status(400).json({
@@ -159,8 +188,9 @@ module.exports.apply_company = async (req, res) => {
     // let frontend handle the gte 20 c.t.c. part
 
     // currentRound and finalResult are by default stored 0 and false in db
-    const student = await Student.findById(req.student.id);
+    const student = await Student.findById(req.student._id);
 
+    console.log(student)
     student.appliedCompanies.push({
       companyId: company.id,
       name: company.name,
@@ -201,7 +231,7 @@ module.exports.student_reset_password = async (req, res) => {
   console.log('isValid', isValid);
 
   if (!isValid) {
-    return res.status(400).json({success:false,msg:"Reset password token is invalid or has been expired"});
+    return res.status(400).json({ success: false, msg: "Reset password token is invalid or has been expired" });
   }
 
   student.password = req.body.newPassword;

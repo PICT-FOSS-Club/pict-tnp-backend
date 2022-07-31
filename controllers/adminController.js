@@ -54,11 +54,14 @@ module.exports.signup_admin = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    let token;
     const admin = await Admin.create({ email, password });
-    const token = createToken(admin._id);
-    res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
-    res.cookie("usertype", "admin", { httpOnly: true, maxAge: tokenAge * 1000 });
-    res.status(201).json({ admin: admin._id });
+    // const token = createToken(admin._id);
+    token = await admin.generateAuthToken();
+    console.log('admin token', token);
+    res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000)  }); //30 days
+    res.cookie("usertype", "admin", { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000)  });
+    res.status(201).json({ admin: admin._id, success: true });
   }
   catch (err) {
     const errors = handleErrors(err);
@@ -70,11 +73,25 @@ module.exports.signup_admin = async (req, res) => {
 module.exports.login_admin = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const admin = await Admin.login(email, password);
-    const token = createToken(admin._id);
-    res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
-    res.cookie("usertype", "admin", { httpOnly: true, maxAge: tokenAge * 1000 });
-    res.status(200).json({ admin });
+    // const admin = await Admin.login(email, password);
+    // const token = createToken(admin._id);
+    let token;
+    const admin = await Admin.findOne({email: email});
+    if(admin){
+      const isMatch = await bcrypt.compare(password, admin.password);
+      token = await admin.generateAuthToken();
+      console.log('admin token', token);
+      if(isMatch){
+        res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) }); // 30 days
+        res.cookie("usertype", "admin", { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) });
+        res.status(200).json({ admin, success: true  });
+      }else{
+        res.status(400).json({ error: "invalid creds" });
+      }
+    }else{
+      res.status(400).json({ error: "invalid creds" });
+    }
+
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors });

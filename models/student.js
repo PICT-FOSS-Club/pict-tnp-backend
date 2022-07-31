@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const { isEmail } = require("validator");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
+const jwt = require("jsonwebtoken");
 
 const studentSchema = new mongoose.Schema({
   // TE roll number
@@ -293,6 +294,17 @@ studentSchema.statics.login = async function (email, password) {
   }
   throw new Error("Incorrect Email");
 };
+
+studentSchema.methods.generateAuthToken = async function (){
+  try {
+    let tokenGen = jwt.sign({_id:this._id}, process.env.JWT_SECRET);
+    // this.tokens = this.tokens.concat({ token : tokenGen });
+    // await this.save();
+    return tokenGen;
+  } catch (err) {
+    console.log('err in generateAuthToken',err)
+  }
+}
 
 module.exports.validate = (student) => {
   const schema = Joi.object({
