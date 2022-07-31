@@ -103,7 +103,7 @@ module.exports.logout_student = (req, res) => {
 // student profile
 module.exports.student_profile = async (req, res) => {
   try {
-    const student = await Student.findById(req.student.id);
+    const student = await Student.findById(req.student._id);
     res.status(200).json({ student, success: true });
   } catch {
     res.status(400).json({ success: false, message: "Login or Signup" });
@@ -133,7 +133,7 @@ module.exports.drive_compaines = async (req, res) => {
 module.exports.apply_company = async (req, res) => {
   try {
     // studentApplyForCompanies later - companyid take from req.body._id
-    const company = await Company.findOne({ _id: req.body.companyId });
+    const company = await Company.findById(req.body.companyId);
 
     if (!company) {
       return res.status(403).json({ success: false, message: "No such Company exist" });
@@ -144,8 +144,8 @@ module.exports.apply_company = async (req, res) => {
     // finding if student already exists in company's appliedStudents array
     const studentExists = await Company.findOne({
       $and: [
-        { "_id": req.body.companyId },
-        { "appliedStudents.studentId": req.student.id },
+        { _id: req.body.companyId },
+        { "appliedStudents.studentId": req.student._id },
       ],
     });
 
@@ -159,7 +159,7 @@ module.exports.apply_company = async (req, res) => {
     // let frontend handle the gte 20 c.t.c. part
 
     // currentRound and finalResult are by default stored 0 and false in db
-    const student = await Student.findById(req.student.id);
+    const student = await Student.findById(req.student._id);
 
     student.appliedCompanies.push({
       companyId: company.id,
