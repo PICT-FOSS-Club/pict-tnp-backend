@@ -22,7 +22,7 @@ let upload = multer({
       company = company.name;
       let path = `./uploads/${company}`;
       if (!fs.existsSync(path)) {
-        fs.mkdirSync(path);
+        fs.mkdirSync(path, { recursive: true });
       }
       cb(null, path);
     },
@@ -98,16 +98,23 @@ module.exports.login_student = async (req, res) => {
     if (student) {
       const isMatch = await bcrypt.compare(password, student.password);
       // token = createToken(student._id);
-      token = await student.generateAuthToken()
+      token = await student.generateAuthToken();
       if (isMatch) {
-        res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) }); //30 days expiry
-        res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) });
+        res.cookie("token", token, {
+          httpOnly: true,
+          maxAge: tokenAge * 1000,
+          expires: new Date(Date.now() + 2483000000),
+        }); //30 days expiry
+        res.cookie("usertype", "student", {
+          httpOnly: true,
+          maxAge: tokenAge * 1000,
+          expires: new Date(Date.now() + 2483000000),
+        });
         res.status(200).send({ student, success: true });
       } else {
         res.status(400).json({ error: "invalid creds" });
       }
-    }
-    else {
+    } else {
       res.status(400).json({ error: "invalid creds" });
     }
   } catch (err) {
@@ -188,7 +195,7 @@ module.exports.apply_company = async (req, res) => {
     // currentRound and finalResult are by default stored 0 and false in db
     const student = await Student.findById(req.student._id);
 
-    console.log(student)
+    console.log(student);
     student.appliedCompanies.push({
       companyId: company.id,
       name: company.name,
@@ -217,7 +224,7 @@ module.exports.apply_company = async (req, res) => {
 // student reset Password
 module.exports.student_reset_password = async (req, res) => {
   //passing in query not in params
-  console.log('query', req.query);
+  console.log("query", req.query);
   // console.log()
 
   const student = await Student.findOne({ _id: req.query.id });
@@ -226,10 +233,15 @@ module.exports.student_reset_password = async (req, res) => {
     student.resetPasswordToken
   );
 
-  console.log('isValid', isValid);
+  console.log("isValid", isValid);
 
   if (!isValid) {
-    return res.status(400).json({ success: false, msg: "Reset password token is invalid or has been expired" });
+    return res
+      .status(400)
+      .json({
+        success: false,
+        msg: "Reset password token is invalid or has been expired",
+      });
   }
 
   student.password = req.body.newPassword;
@@ -300,21 +312,29 @@ module.exports.student_forgot_password = async (req, res) => {
   });
 
   try {
-    let info = await transporter.sendMail({
-      from: process.env.SMTP_SERVICE,
-      to: student.email,
-      subject: "Password Recovery checking 1",
-      // text: message,
-      html: message,
-    }, function (err, info) {
-      if (err) throw err;
-      console.log('response:', info.response, " Message sent: %s", info.messageId);
-      // 250 Requested mail action okay, completed
-      res.status(250).json({
-        success: true,
-        message: `Email send to ${student.email} successfully`,
-      });
-    });
+    let info = await transporter.sendMail(
+      {
+        from: process.env.SMTP_SERVICE,
+        to: student.email,
+        subject: "Password Recovery checking 1",
+        // text: message,
+        html: message,
+      },
+      function (err, info) {
+        if (err) throw err;
+        console.log(
+          "response:",
+          info.response,
+          " Message sent: %s",
+          info.messageId
+        );
+        // 250 Requested mail action okay, completed
+        res.status(250).json({
+          success: true,
+          message: `Email send to ${student.email} successfully`,
+        });
+      }
+    );
 
     // res.status(200).json({
     //   success: true,
@@ -326,7 +346,7 @@ module.exports.student_forgot_password = async (req, res) => {
     student.resetPasswordToken = undefined;
     student.resetPasswordToken = undefined;
     await student.save({ validateBeforeSave: false });
-    console.log('error in student forgot pass', error);
+    console.log("error in student forgot pass", error);
   }
 };
 
@@ -376,11 +396,15 @@ module.exports.company_detials = async (req, res) => {
   try {
     const company = await Company.findById(req.params.companyId);
     if (!company) {
-      return res.status(400).json({ success: false, message: "Company Not Found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Company Not Found" });
     }
 
-    return res.status(200).json({ success: true, message: "Company Found", data: company });
+    return res
+      .status(200)
+      .json({ success: true, message: "Company Found", data: company });
   } catch (err) {
     res.status(400).json({ errors: err, success: false });
   }
-}
+};
