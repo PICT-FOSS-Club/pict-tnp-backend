@@ -22,13 +22,13 @@ let upload = multer({
       company = company.name;
       let path = `./uploads/${company}`;
       if (!fs.existsSync(path)) {
-        fs.mkdirSync(path);
+        fs.mkdirSync(path, { recursive: true });
       }
       cb(null, path);
     },
     filename: async (req, file, cb) => {
       //  ** with student auth Code
-      let studentId = req.student.id;
+      let studentId = req.student._id;
       console.log(studentId);
       let student = await Student.findById(studentId);
       if (!student) {
@@ -71,24 +71,52 @@ const handleErrors = (err) => {
 
 const tokenAge = parseInt(process.env.JWT_AGE);
 
-const createToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: tokenAge,
-  });
-};
+// const createToken = (id) => {
+//   return jwt.sign({ id }, process.env.JWT_SECRET, {
+//     expiresIn: tokenAge,
+//   });
+// };
 
 // login student
 module.exports.login_student = async (req, res) => {
+  // const { email, password } = req.body;
+  // try {
+  //   const student = await Student.login(email, password);
+  //   const token = createToken(student._id);
+  //   res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
+  //   res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000 });
+  //   res.status(200).send({ student, success: true });
+  // } catch (err) {
+  //   const errors = handleErrors(err);
+  //   res.status(400).json({ errors, success: false });
+  // }
   const { email, password } = req.body;
   try {
-    const student = await Student.login(email, password);
-    const token = createToken(student._id);
-    res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
-    res.cookie("usertype", "student", {
-      httpOnly: true,
-      maxAge: tokenAge * 1000,
-    });
-    res.status(200).send({ student, success: true });
+    let token;
+    // const student = await Student.login(email, password);
+    const student = await Student.findOne({ email: email });
+    if (student) {
+      const isMatch = await bcrypt.compare(password, student.password);
+      // token = createToken(student._id);
+      token = await student.generateAuthToken();
+      if (isMatch) {
+        res.cookie("token", token, {
+          httpOnly: true,
+          maxAge: tokenAge * 1000,
+          expires: new Date(Date.now() + 2483000000),
+        }); //30 days expiry
+        res.cookie("usertype", "student", {
+          httpOnly: true,
+          maxAge: tokenAge * 1000,
+          expires: new Date(Date.now() + 2483000000),
+        });
+        res.status(200).send({ student, success: true });
+      } else {
+        res.status(400).json({ error: "invalid creds" });
+      }
+    } else {
+      res.status(400).json({ error: "invalid creds" });
+    }
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors, success: false });
@@ -106,7 +134,7 @@ module.exports.logout_student = (req, res) => {
 // student profile
 module.exports.student_profile = async (req, res) => {
   try {
-    const student = await Student.findById(req.student.id);
+    const student = await Student.findById(req.student._id);
     res.status(200).json({ student, success: true });
   } catch {
     res.status(400).json({ success: false, message: "Login or Signup" });
@@ -136,8 +164,7 @@ module.exports.drive_compaines = async (req, res) => {
 module.exports.apply_company = async (req, res) => {
   try {
     // studentApplyForCompanies later - companyid take from req.body._id
-    const company = await Company.findOne({ _id: req.body.companyId });
-
+    const company = await Company.findById(req.body.companyId);
     if (!company) {
       return res
         .status(403)
@@ -148,9 +175,11 @@ module.exports.apply_company = async (req, res) => {
     const studentExists = await Company.findOne({
       $and: [
         { _id: req.body.companyId },
-        { "appliedStudents.studentId": req.student.id },
+        { "appliedStudents.studentId": req.student._id },
       ],
     });
+
+    // console.log("stu", studentExists)
 
     if (studentExists) {
       return res.status(400).json({
@@ -162,7 +191,7 @@ module.exports.apply_company = async (req, res) => {
     // let frontend handle the gte 20 c.t.c. part
 
     // currentRound and finalResult are by default stored 0 and false in db
-    const student = await Student.findById(req.student.id);
+    const student = await Student.findById(req.student._id);
 
     //get the student branch:
     const studentBranch = student.branch;
@@ -345,7 +374,7 @@ module.exports.student_forgot_password = async (req, res) => {
 
 // student reset Password
 module.exports.student_update_password = async (req, res) => {
-  const student = await Student.findById(req.student.id);
+  const student = await Student.findById(req.student._id);
 
   const isPasswordMatched = await bcrypt.compare(
     req.body.oldPassword,
@@ -362,25 +391,14 @@ module.exports.student_update_password = async (req, res) => {
 
   await student.save();
 
-  // option for cookie
-  const options = {
-    expires: new Date(
-      Date.now() + parseInt(process.env.UPDATE_PASSWORD_AGE) * 1000 //1000 for milliseconds
-    ),
-    httpOnly: true,
-  };
-
-  res.status(200).cookie("token", options).json({
-    success: true,
-    student,
-  });
+  res.status(200).json({ success: true, message: "Password Updated." });
 };
 
 module.exports.resume_upload = async (req, res) => {
   upload(req, res, async () => {
     try {
       const file = await File.create({
-        student_id: req.student.id,
+        student_id: req.student._id,
         company_id: req.params.companyId,
         file_path: `./uploads/${req.company.name}/${req.filename}.pdf`,
       });

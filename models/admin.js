@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const { isEmail } = require("validator");
 const bcrypt = require("bcrypt");
+const Joi = require("joi");
+const jwt = require("jsonwebtoken");
 
 const adminSchema = new mongoose.Schema({
   email: {
@@ -41,6 +43,17 @@ adminSchema.statics.login = async function (email, password) {
   }
   throw Error("Incorrect Email");
 };
+
+adminSchema.methods.generateAuthToken = async function (){
+  try {
+    let tokenGen = jwt.sign({_id:this._id}, process.env.JWT_SECRET);
+    // this.tokens = this.tokens.concat({ token : tokenGen });
+    // await this.save();
+    return tokenGen;
+  } catch (err) {
+    console.log('err in generateAuthToken admin',err)
+  }
+}
 
 const Admin = mongoose.model("admin", adminSchema);
 
