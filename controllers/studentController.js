@@ -84,7 +84,10 @@ module.exports.login_student = async (req, res) => {
     const student = await Student.login(email, password);
     const token = createToken(student._id);
     res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
-    res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000 });
+    res.cookie("usertype", "student", {
+      httpOnly: true,
+      maxAge: tokenAge * 1000,
+    });
     res.status(200).send({ student, success: true });
   } catch (err) {
     const errors = handleErrors(err);
@@ -136,15 +139,15 @@ module.exports.apply_company = async (req, res) => {
     const company = await Company.findOne({ _id: req.body.companyId });
 
     if (!company) {
-      return res.status(403).json({ success: false, message: "No such Company exist" });
+      return res
+        .status(403)
+        .json({ success: false, message: "No such Company exist" });
     }
-
-    // handle start and endDate logic: FRONTEND
 
     // finding if student already exists in company's appliedStudents array
     const studentExists = await Company.findOne({
       $and: [
-        { "_id": req.body.companyId },
+        { _id: req.body.companyId },
         { "appliedStudents.studentId": req.student.id },
       ],
     });
@@ -161,6 +164,29 @@ module.exports.apply_company = async (req, res) => {
     // currentRound and finalResult are by default stored 0 and false in db
     const student = await Student.findById(req.student.id);
 
+    //get the student branch:
+    const studentBranch = student.branch;
+    const csApplicable = company.criteria.branch.cs;
+    const itApplicable = company.criteria.branch.it;
+    const entcApplicable = company.criteria.branch.entc;
+
+    let canApply = false;
+    let myArray = [];
+
+    if (studentBranch === "cs") {
+      if (csApplicable) {
+        canApply = true;
+      }
+    } else if (studentBranch === "it") {
+      if (itApplicable) {
+        canApply = true;
+      }
+    } else if (studentBranch === "entc") {
+      if (entcApplicable) {
+        canApply = true;
+      }
+    }
+
     student.appliedCompanies.push({
       companyId: company.id,
       name: company.name,
@@ -172,16 +198,20 @@ module.exports.apply_company = async (req, res) => {
       email: student.email,
     });
 
+    const status = !canApply ? 403 : 200;
+
     // not used {validateBeforeSave:false}
     await company.save();
     await student.save();
 
     // here sending company.appliedStudents only for testing
-    return res.status(200).json({
+    return res.status(status).json({
       success: true,
       message: "You've Successfully applied to this company",
+      status: status,
     });
   } catch (err) {
+    console.log("Error", err);
     return res.send(err);
   }
 };
@@ -189,7 +219,7 @@ module.exports.apply_company = async (req, res) => {
 // student reset Password
 module.exports.student_reset_password = async (req, res) => {
   //passing in query not in params
-  console.log('query', req.query);
+  console.log("query", req.query);
   // console.log()
 
   const student = await Student.findOne({ _id: req.query.id });
@@ -198,10 +228,13 @@ module.exports.student_reset_password = async (req, res) => {
     student.resetPasswordToken
   );
 
-  console.log('isValid', isValid);
+  console.log("isValid", isValid);
 
   if (!isValid) {
-    return res.status(400).json({success:false,msg:"Reset password token is invalid or has been expired"});
+    return res.status(400).json({
+      success: false,
+      msg: "Reset password token is invalid or has been expired",
+    });
   }
 
   student.password = req.body.newPassword;
@@ -272,21 +305,29 @@ module.exports.student_forgot_password = async (req, res) => {
   });
 
   try {
-    let info = await transporter.sendMail({
-      from: process.env.SMTP_SERVICE,
-      to: student.email,
-      subject: "Password Recovery checking 1",
-      // text: message,
-      html: message,
-    }, function (err, info) {
-      if (err) throw err;
-      console.log('response:', info.response, " Message sent: %s", info.messageId);
-      // 250 Requested mail action okay, completed
-      res.status(250).json({
-        success: true,
-        message: `Email send to ${student.email} successfully`,
-      });
-    });
+    let info = await transporter.sendMail(
+      {
+        from: process.env.SMTP_SERVICE,
+        to: student.email,
+        subject: "Password Recovery checking 1",
+        // text: message,
+        html: message,
+      },
+      function (err, info) {
+        if (err) throw err;
+        console.log(
+          "response:",
+          info.response,
+          " Message sent: %s",
+          info.messageId
+        );
+        // 250 Requested mail action okay, completed
+        res.status(250).json({
+          success: true,
+          message: `Email send to ${student.email} successfully`,
+        });
+      }
+    );
 
     // res.status(200).json({
     //   success: true,
@@ -298,7 +339,7 @@ module.exports.student_forgot_password = async (req, res) => {
     student.resetPasswordToken = undefined;
     student.resetPasswordToken = undefined;
     await student.save({ validateBeforeSave: false });
-    console.log('error in student forgot pass', error);
+    console.log("error in student forgot pass", error);
   }
 };
 
@@ -359,11 +400,15 @@ module.exports.company_detials = async (req, res) => {
   try {
     const company = await Company.findById(req.params.companyId);
     if (!company) {
-      return res.status(400).json({ success: false, message: "Company Not Found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Company Not Found" });
     }
 
-    return res.status(200).json({ success: true, message: "Company Found", data: company });
+    return res
+      .status(200)
+      .json({ success: true, message: "Company Found", data: company });
   } catch (err) {
     res.status(400).json({ errors: err, success: false });
   }
-}
+};
