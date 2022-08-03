@@ -88,7 +88,7 @@ const studentSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0,
-    max: 100
+    max: 100,
   },
   sscBoard: {
     type: String,
@@ -97,11 +97,11 @@ const studentSchema = new mongoose.Schema({
   },
   yearOFPassingSsc: {
     type: Number,
-    required: true
+    required: true,
   },
   gapAfterSsc: {
     type: Number,
-    required: true
+    required: true,
   },
   reasonOfGapSsc: {
     type: String,
@@ -109,17 +109,17 @@ const studentSchema = new mongoose.Schema({
 
   isHsc: {
     type: Boolean,
-    requied: true
+    requied: true,
   },
 
   isDiploma: {
     type: Boolean,
-    requied: true
+    requied: true,
   },
 
   isBoth: {
     type: Boolean,
-    requied: true
+    requied: true,
   },
 
   // HSC details
@@ -166,7 +166,7 @@ const studentSchema = new mongoose.Schema({
 
   yearOfStartingCollege: {
     type: Number,
-    required: true
+    required: true,
   },
   firstYearFirstSemCgpa: {
     type: Number,
@@ -210,24 +210,24 @@ const studentSchema = new mongoose.Schema({
   aadharCard: {
     type: Number,
     unique: true,
-    required: true
+    required: true,
   },
   // panCard
   panCard: {
     type: String,
-    required: true
+    required: true,
   },
   passportCard: {
     type: String,
-    required: true
+    required: true,
   },
   citizenship: {
     type: String,
-    required: true
+    required: true,
   },
   planningForHigherEducation: {
     type: String,
-    required: true
+    required: true,
   },
   // Amcat details
   appearedForAmcat: {
@@ -241,34 +241,40 @@ const studentSchema = new mongoose.Schema({
   },
   isLTE20: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isGT20: {
     type: Boolean,
-    default: false
+    default: false,
   },
-  appliedCompanies: [{
-    companyId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Company'
+  appliedCompanies: [
+    {
+      companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Company",
+      },
+      name: {
+        type: String,
+        required: true,
+      },
+      totalRounds: {
+        type: Number,
+        required: true,
+      },
+      roundCleared: {
+        type: Number,
+        default: 0,
+      },
+      result: {
+        type: Boolean,
+        default: true,
+      },
     },
-    name: {
-      type: String,
-      required: true
-    },
-    totalRounds: {
-      type: Number,
-      required: true
-    },
-    roundCleared: {
-      type: Number,
-      default: 0
-    },
-    result: {
-      type: Boolean,
-      default: true
-    }
-  }],
+  ],
+
+  //Ug and Pg boolean
+  isUg: { type: Boolean, default: true },
+
   //new fields :
   resetPasswordToken: String,
   resetPasswordExpire: Date,
@@ -276,7 +282,7 @@ const studentSchema = new mongoose.Schema({
 });
 
 studentSchema.pre("save", async function (next) {
-  if (this.isModified('password')) {
+  if (this.isModified("password")) {
     const salt = await bcrypt.genSalt();
     this.password = await bcrypt.hash(this.password, salt);
   }
@@ -295,20 +301,19 @@ studentSchema.statics.login = async function (email, password) {
   throw new Error("Incorrect Email");
 };
 
-studentSchema.methods.generateAuthToken = async function (){
+studentSchema.methods.generateAuthToken = async function () {
   try {
-    let tokenGen = jwt.sign({_id:this._id}, process.env.JWT_SECRET);
+    let tokenGen = jwt.sign({ _id: this._id }, process.env.JWT_SECRET);
     // this.tokens = this.tokens.concat({ token : tokenGen });
     // await this.save();
     return tokenGen;
   } catch (err) {
-    console.log('err in generateAuthToken',err)
+    console.log("err in generateAuthToken", err);
   }
-}
+};
 
 module.exports.validate = (student) => {
   const schema = Joi.object({
-
     rollNumber: Joi.number().required(),
     teSection: Joi.number(),
     firstName: Joi.string().required(),
@@ -379,7 +384,7 @@ module.exports.validate = (student) => {
     password: Joi.string().required().min(7),
 
     isLTE20: Joi.boolean(),
-    isGTE20: Joi.boolean()
+    isGTE20: Joi.boolean(),
   });
 
   return schema.validate(student);

@@ -216,18 +216,27 @@ module.exports.apply_company = async (req, res) => {
       }
     }
 
-    student.appliedCompanies.push({
-      companyId: company.id,
-      name: company.name,
-      totalRounds: company.totalRounds,
-    });
+    //Course for student - either Ug or Pg:
+    const companyCriteriaCourse = company.criteria.courseName.ug;
+    const studentCourse = student.isUg;
 
-    company.appliedStudents.push({
-      studentId: student.id,
-      email: student.email,
-    });
+    if (companyCriteriaCourse !== studentCourse) {
+      canApply = false;
+    }
 
     const status = !canApply ? 403 : 200;
+    if (status === 200) {
+      student.appliedCompanies.push({
+        companyId: company.id,
+        name: company.name,
+        totalRounds: company.totalRounds,
+      });
+
+      company.appliedStudents.push({
+        studentId: student.id,
+        email: student.email,
+      });
+    }
 
     // not used {validateBeforeSave:false}
     await company.save();
@@ -236,7 +245,10 @@ module.exports.apply_company = async (req, res) => {
     // here sending company.appliedStudents only for testing
     return res.status(status).json({
       success: true,
-      message: "You've Successfully applied to this company",
+      message:
+        status === 200
+          ? "You have succesfully applied to this company"
+          : "You cannot apply to this company",
       status: status,
     });
   } catch (err) {

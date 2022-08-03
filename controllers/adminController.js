@@ -58,12 +58,19 @@ module.exports.signup_admin = async (req, res) => {
     const admin = await Admin.create({ email, password });
     // const token = createToken(admin._id);
     token = await admin.generateAuthToken();
-    console.log('admin token', token);
-    res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000)  }); //30 days
-    res.cookie("usertype", "admin", { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000)  });
+    console.log("admin token", token);
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: tokenAge * 1000,
+      expires: new Date(Date.now() + 2483000000),
+    }); //30 days
+    res.cookie("usertype", "admin", {
+      httpOnly: true,
+      maxAge: tokenAge * 1000,
+      expires: new Date(Date.now() + 2483000000),
+    });
     res.status(201).json({ admin: admin._id, success: true });
-  }
-  catch (err) {
+  } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors, success: false });
   }
@@ -76,21 +83,28 @@ module.exports.login_admin = async (req, res) => {
     // const admin = await Admin.login(email, password);
     // const token = createToken(admin._id);
     let token;
-    const admin = await Admin.findOne({email: email});
-    if(admin){
+    const admin = await Admin.findOne({ email: email });
+    if (admin) {
       const isMatch = await bcrypt.compare(password, admin.password);
       token = await admin.generateAuthToken();
-      if(isMatch){
-        res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) }); // 30 days
-        res.cookie("usertype", "admin", { httpOnly: true, maxAge: tokenAge * 1000, expires: new Date(Date.now() + 2483000000) });
-        res.status(200).json({ admin, success: true  });
-      }else{
+      if (isMatch) {
+        res.cookie("token", token, {
+          httpOnly: true,
+          maxAge: tokenAge * 1000,
+          expires: new Date(Date.now() + 2483000000),
+        }); // 30 days
+        res.cookie("usertype", "admin", {
+          httpOnly: true,
+          maxAge: tokenAge * 1000,
+          expires: new Date(Date.now() + 2483000000),
+        });
+        res.status(200).json({ admin, success: true });
+      } else {
         res.status(400).json({ error: "invalid creds" });
       }
-    }else{
+    } else {
       res.status(400).json({ error: "invalid creds" });
     }
-
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors });
@@ -99,15 +113,14 @@ module.exports.login_admin = async (req, res) => {
 
 // logout admin
 module.exports.logout_admin = (req, res) => {
-  req.admin._id = '';
+  req.admin._id = "";
   res.cookie("token", "", { maxAge: 1 });
   res.cookie("usertype", "", { maxAge: 1 });
-  res.send({ success: true, message: 'Logged Out.' });
+  res.send({ success: true, message: "Logged Out." });
 };
 
 // upate password
 module.exports.admin_update_password = async (req, res) => {
-
   const admin = await Admin.findById(req.admin._id);
 
   const isPasswordMatched = await bcrypt.compare(
@@ -126,7 +139,7 @@ module.exports.admin_update_password = async (req, res) => {
   await admin.save();
 
   res.status(200).json({ success: true, message: "Password Updated." });
-}
+};
 
 // admin reset Password
 module.exports.admin_reset_password = async (req, res) => {
@@ -196,7 +209,6 @@ module.exports.admin_forgot_password = async (req, res) => {
   // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/resetPassword?token=${resetToken}&id=${user._id}`;
   const resetPasswordUrl = `http://localhost:3000/admin/password/reset/${resetToken}/${admin.id}`;
 
-
   const message = `Your reset password token is:- \n\n <a href=${resetPasswordUrl}>click here</a> \n\n If you have not reque
   sted please ignore this mail`;
 
@@ -209,21 +221,29 @@ module.exports.admin_forgot_password = async (req, res) => {
   });
 
   try {
-    let info = await transporter.sendMail({
-      from: process.env.SMTP_SERVICE,
-      to: admin.email,
-      subject: "Password Recovery checking Admin",
-      // text: message,
-      html: message,
-    }, function (err, info) {
-      if (err) throw err;
-      console.log('response:', info.response, " Message sent: %s",info.messageId);
-      // 250 Requested mail action okay, completed
-      res.status(250).json({
-        success: true,
-        message: `Email send to ${admin.email} successfully`,
-      });
-    });
+    let info = await transporter.sendMail(
+      {
+        from: process.env.SMTP_SERVICE,
+        to: admin.email,
+        subject: "Password Recovery checking Admin",
+        // text: message,
+        html: message,
+      },
+      function (err, info) {
+        if (err) throw err;
+        console.log(
+          "response:",
+          info.response,
+          " Message sent: %s",
+          info.messageId
+        );
+        // 250 Requested mail action okay, completed
+        res.status(250).json({
+          success: true,
+          message: `Email send to ${admin.email} successfully`,
+        });
+      }
+    );
 
     // res.status(200).json({success: true,message: `Email send to ${admin.email} successfully`,});
 
@@ -242,89 +262,102 @@ module.exports.register_student = async (req, res) => {
 
   const { error } = Student.validate(req.body);
   if (error) {
-    console.log('error', error);
+    console.log("error", error);
     return res.status(400).send(error.details[0].message);
   }
 
   try {
     const newStudent = await Student.create(student);
 
-    const message = `Your TnP account has been created suceesfully \n\n Your password is your mobile Number `
+    const message = `Your TnP account has been created suceesfully \n\n Your password is your mobile Number `;
 
     const transporter = nodeMailer.createTransport({
       service: process.env.SMTP_SERVICE,
       auth: {
         user: process.env.SMTP_MAIL,
         pass: process.env.SMTP_PASSWORD,
-      }
+      },
     });
 
     try {
-      let info = await transporter.sendMail({
-        from: process.env.SMTP_SERVICE,
-        to: newStudent.email,
-        subject: 'Student Account created',
-        html: message
-      }, function (err, info) {
-        if (err) throw err;
-        console.log('status:', info.response, " Message sent: %s",info.messageId);
-        // 250 Requested mail action okay, completed
-        res.status(250).json({
-          success: true,
-          message: `Email send to ${newStudent.email} successfully`,
-        });
-      });
+      let info = await transporter.sendMail(
+        {
+          from: process.env.SMTP_SERVICE,
+          to: newStudent.email,
+          subject: "Student Account created",
+          html: message,
+        },
+        function (err, info) {
+          if (err) throw err;
+          console.log(
+            "status:",
+            info.response,
+            " Message sent: %s",
+            info.messageId
+          );
+          // 250 Requested mail action okay, completed
+          res.status(250).json({
+            success: true,
+            message: `Email send to ${newStudent.email} successfully`,
+          });
+        }
+      );
 
       // res.status(200).json({success: true,message: `Email send to ${newStudent.email} successfully`,});
     } catch (err) {
-      console.log('err', err);
+      console.log("err", err);
     }
 
-
-    res.status(201).json({ success: true, message: "Student Registered Successfully." });
+    res
+      .status(201)
+      .json({ success: true, message: "Student Registered Successfully." });
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors });
   }
-}
+};
 
 module.exports.register_students = async (req, res) => {
   const students = req.body;
   let array = [];
   try {
-
     students.forEach(async (student) => {
       await Student.create(student);
     });
 
     students.forEach((student) => {
       array.push(student.email);
-    })
+    });
 
-    console.log(array)
+    console.log(array);
 
     const transporter = nodeMailer.createTransport({
       service: process.env.SMTP_SERVICE,
       auth: {
         user: process.env.SMTP_MAIL,
         pass: process.env.SMTP_PASSWORD,
-      }
+      },
     });
 
-    const message = `Your TnP account has been created suceesfully \n\n Your password is your mobile Number `
+    const message = `Your TnP account has been created suceesfully \n\n Your password is your mobile Number `;
 
     let mailOptions = {
       from: process.env.SMTP_SERVICE,
       to: array,
-      subject: 'Final checking Latest',
-      html: message
+      subject: "Final checking Latest",
+      html: message,
     };
 
     // send response in another function after mailOptions else gives cant set headers after they're sent to the client error
     try {
       let info = await transporter.sendMail(mailOptions, function (err, info) {
         if (err) throw err;
-        console.log('status: ', info.response, " Message sent: %s",info.messageId);
+        console.log(
+          "status: ",
+          info.response,
+          " Message sent: %s",
+          info.messageId
+        );
         // 250 Requested mail action okay, completed
         res.status(250).json({
           success: true,
@@ -332,17 +365,15 @@ module.exports.register_students = async (req, res) => {
         });
       });
     } catch (err) {
-      console.log('err in coll reg', err);
+      console.log("err in coll reg", err);
     }
-    
-    // here dont send res as it gives cant set headers after they're sent to the client 
+
+    // here dont send res as it gives cant set headers after they're sent to the client
     // res.status(200).json({success: true,message: `Email send to ${array} successfully`,});
     // res.status(201).send({ success: true, message: "All Students Registered Successfully." });
-
-  }
-  catch (err) {
+  } catch (err) {
     // const errors = handleErrors(err);
-    res.status(400).json({ errors, success: false })
+    res.status(400).json({ errors, success: false });
     // console.log('err in last clasuse', err)
   }
 };
@@ -351,87 +382,132 @@ module.exports.get_company = async (req, res) => {
   try {
     const company = await Company.findById(req.params.companyId);
     if (!company) {
-      return res.status(400).json({ success: false, message: "Company Not Found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Company Not Found" });
     }
 
-    return res.status(200).json({ success: true, message: "Company Found", data: company });
+    return res
+      .status(200)
+      .json({ success: true, message: "Company Found", data: company });
   } catch (err) {
     res.status(400).json({ errors: err, success: false });
   }
-}
+};
 
 module.exports.get_all_companies = async (req, res) => {
   try {
     const companyList = await Company.find();
-    return res.status(200).json({ success: true, message: "Company List", data: companyList });
+    return res
+      .status(200)
+      .json({ success: true, message: "Company List", data: companyList });
   } catch (err) {
     res.status(400).json({ errors: err, success: false });
   }
-}
+};
 
 module.exports.get_student = async (req, res) => {
   try {
     const student = await Student.findById(req.params.studentId);
     if (!student) {
-      return res.status(400).json({ success: false, message: "Student Not Found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Student Not Found" });
     }
 
-    return res.status(200).json({ success: true, message: "Student Found", data: student });
+    return res
+      .status(200)
+      .json({ success: true, message: "Student Found", data: student });
   } catch (err) {
     res.status(400).json({ errors: err, success: false });
   }
-}
+};
 
 module.exports.get_all_students = async (req, res) => {
   try {
     const studentList = await Student.find();
-    return res.status(200).json({ success: true, message: "Student List", data: studentList });
+    return res
+      .status(200)
+      .json({ success: true, message: "Student List", data: studentList });
   } catch (err) {
     res.status(400).json({ errors: err, success: false });
   }
-}
+};
 
 module.exports.get_dashboard_details = async (req, res) => {
   try {
     const companyList = await Company.find();
     const dashboard_details = {
       totalStudents: (await Student.find()).length,
-      placedStudents: (await Student.find({ $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }] })).length,
+      placedStudents: (
+        await Student.find({
+          $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }],
+        })
+      ).length,
       unplacedStudents: 0,
       totalCompanies: companyList.length,
-      averageCTC: 0
-    }
+      averageCTC: 0,
+    };
 
-    dashboard_details.unplacedStudents = dashboard_details.totalStudents - dashboard_details.placedStudents;
+    dashboard_details.unplacedStudents =
+      dashboard_details.totalStudents - dashboard_details.placedStudents;
 
     let sumOfCTC = 0;
     for (const company of companyList) {
-      sumOfCTC += (company.ctc);
+      sumOfCTC += company.ctc;
     }
     dashboard_details.averageCTC = sumOfCTC / companyList.length;
     res.status(200).json({ success: true, dashboard_details });
-  }
-  catch (err) {
+  } catch (err) {
     res.status(400).json({ errors: err, success: false });
   }
-}
+};
 
 module.exports.get_company_round_applied_students = async (req, res) => {
   try {
-    const studentList = await Company.find({ _id: req.params.companyId, 'appliedCompanies.roundCleared': { $gte: req.params.number }});
-    res. status(200).json({ success: true, studentList})
+    const studentList = await Company.find({
+      _id: req.params.companyId,
+      "appliedCompanies.roundCleared": { $gte: req.params.number },
+    });
+    res.status(200).json({ success: true, studentList });
+  } catch (err) {
+    res.status(400).json({ success: false, errors: err });
   }
-  catch (err) {
-    res.status(400).json({ success: false, errors: err});
-  }
-} 
+};
 
 module.exports.get_company_round_qualified_students = async (req, res) => {
   try {
-    const studentList = await Student.find({ _id: req.student._id, 'appliedCompanies.companyId': {$eq: req.params.companyId}, currentRound: { $gte: req.params.number }});
-    res. status(200).json({ success: true, studentList})
+    const studentList = await Student.find({
+      _id: req.student._id,
+      "appliedCompanies.companyId": { $eq: req.params.companyId },
+      currentRound: { $gte: req.params.number },
+    });
+    res.status(200).json({ success: true, studentList });
+  } catch (err) {
+    res.status(400).json({ success: false, errors: err });
   }
-  catch (err) {
-    res.status(400).json({ success: false, errors: err});
+};
+
+//
+//Generate Placement Report:
+
+module.exports.get_report_branch_wise = async (req, res) => {
+  const dept = req.query.Dept;
+
+  let students;
+  if (dept == "all") {
+    students = await Student.find();
+  } else {
+    students = await Student.find({ branch: { $eq: dept } });
   }
-} 
+
+  if (!students) {
+    return res
+      .status(404)
+      .json({ success: false, message: "No Student Found!" });
+  }
+
+  return res
+    .status(200)
+    .json({ success: true, message: "List of students", data: students });
+};
