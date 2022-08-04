@@ -59,17 +59,18 @@ module.exports.signup_admin = async (req, res) => {
     // const token = createToken(admin._id);
     token = await admin.generateAuthToken();
     console.log("admin token", token);
+    const usertype = "admin"
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: tokenAge * 1000,
       expires: new Date(Date.now() + 2483000000),
     }); //30 days
-    res.cookie("usertype", "admin", {
-      httpOnly: true,
-      maxAge: tokenAge * 1000,
-      expires: new Date(Date.now() + 2483000000),
-    });
-    res.status(201).json({ admin: admin._id, success: true });
+    // res.cookie("usertype", "admin", {
+    //   httpOnly: true,
+    //   maxAge: tokenAge * 1000,
+    //   expires: new Date(Date.now() + 2483000000),
+    // });
+    res.status(201).json({ admin: admin._id, usertype, token, success: true });
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors, success: false });
@@ -87,18 +88,19 @@ module.exports.login_admin = async (req, res) => {
     if (admin) {
       const isMatch = await bcrypt.compare(password, admin.password);
       token = await admin.generateAuthToken();
+      const usertype = "admin";
       if (isMatch) {
         res.cookie("token", token, {
           httpOnly: true,
           maxAge: tokenAge * 1000,
           expires: new Date(Date.now() + 2483000000),
         }); // 30 days
-        res.cookie("usertype", "admin", {
-          httpOnly: true,
-          maxAge: tokenAge * 1000,
-          expires: new Date(Date.now() + 2483000000),
-        });
-        res.status(200).json({ admin, success: true });
+        // res.cookie("usertype", "admin", {
+        //   httpOnly: true,
+        //   maxAge: tokenAge * 1000,
+        //   expires: new Date(Date.now() + 2483000000),
+        // });
+        res.status(200).json({ admin, token, success: true });
       } else {
         res.status(400).json({ error: "invalid creds" });
       }

@@ -99,18 +99,19 @@ module.exports.login_student = async (req, res) => {
       const isMatch = await bcrypt.compare(password, student.password);
       // token = createToken(student._id);
       token = await student.generateAuthToken();
+      const usertype = "student";
       if (isMatch) {
         res.cookie("token", token, {
           httpOnly: true,
           maxAge: tokenAge * 1000,
           expires: new Date(Date.now() + 2483000000),
         }); //30 days expiry
-        res.cookie("usertype", "student", {
-          httpOnly: true,
-          maxAge: tokenAge * 1000,
-          expires: new Date(Date.now() + 2483000000),
-        });
-        res.status(200).send({ student, success: true });
+        // res.cookie("usertype", "student", {
+        //   httpOnly: true,
+        //   maxAge: tokenAge * 1000,
+        //   expires: new Date(Date.now() + 2483000000),
+        // });
+        res.status(200).send({ student, token, success: true });
       } else {
         res.status(400).json({ error: "invalid creds" });
       }
