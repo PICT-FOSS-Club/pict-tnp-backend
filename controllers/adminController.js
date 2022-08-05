@@ -498,9 +498,17 @@ module.exports.get_report_branch_wise = async (req, res) => {
 
   let students;
   if (dept == "all") {
-    students = await Student.find();
+    students = await Student.find({ $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }]});
   } else {
-    students = await Student.find({ branch: { $eq: dept } });
+    // students = await Student.find({ branch: { $eq: dept } });
+    students = await Student.find(
+      {
+        $and: [
+          { branch: { $eq: dept } },
+          { $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }] }
+        ]
+      }
+    );
   }
 
   if (!students) {
