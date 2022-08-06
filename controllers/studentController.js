@@ -236,6 +236,7 @@ module.exports.apply_company = async (req, res) => {
 
     //gender criteria:
     const studentGender = student.gender;
+    console.log("company.criteria.sscPercentage");
     const maleApplicable = company.criteria.gender.male;
     const femaleApplicable = company.criteria.gender.female;
     const bothApplicable = company.criteria.gender.both;
@@ -248,13 +249,15 @@ module.exports.apply_company = async (req, res) => {
       bothApplicable
     );
 
-    if (studentGender == "female") {
-      if (!femaleApplicable) {
-        canApply = false;
-      }
-    } else if (studentGender == "male") {
-      if (!maleApplicable) {
-        canApply = false;
+    if (!bothApplicable) {
+      if (studentGender == "female") {
+        if (!femaleApplicable) {
+          canApply = false;
+        }
+      } else if (studentGender == "male") {
+        if (!maleApplicable) {
+          canApply = false;
+        }
       }
     }
     console.log("canapply after gender cheking", canApply);
@@ -270,6 +273,12 @@ module.exports.apply_company = async (req, res) => {
     // const studentDiplomaPercentage = student.diplomaPercentage;
 
     if (studentSscPercentage < company.criteria.sscPercentage) {
+      console.log(
+        "ssc per:",
+        studentSscPercentage,
+        " ",
+        company.criteria.sscPercentage
+      );
       canApply = false;
     }
     console.log("canapply after ssc cheking", canApply);
