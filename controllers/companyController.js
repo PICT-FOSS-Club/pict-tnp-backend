@@ -58,10 +58,10 @@ module.exports.rounds_result = async (req, res) => {
     company.currentRound = currentRound + 1;
     await company.save();
 
-    const qualMessage = `Your are qualified for ${currentRound + 1} round of ${
+    let qualMessage = `Your are qualified for ${currentRound + 1} round of ${
       company.name
     }.`;
-    const disqualMessage = `Your are Disqualified for ${
+    let disqualMessage = `Your are Disqualified for ${
       currentRound + 1
     } round of ${company.name}.`;
     const previousQualifiedStudents = company.appliedStudents.filter(
@@ -79,7 +79,7 @@ module.exports.rounds_result = async (req, res) => {
       if (qualStudents.includes(prevQualStudent.studentEmail)) {
         await Company.findOneAndUpdate(
           {
-            id: companyId,
+            _id: companyId,
             "appliedStudents.studentEmail": {
               $eq: prevQualStudent.studentEmail,
             },
@@ -102,17 +102,16 @@ module.exports.rounds_result = async (req, res) => {
               )
             : await Student.findOneAndUpdate(
                 { email: prevQualStudent.studentEmail },
-                { $set: { isGTE20: true } }
+                { $set: { isGT20: true } }
               );
           company.save();
-          qualMessage +=
-            "\nCongratulations you are placed in ${company.name}!😍😍😍.";
+          qualMessage += `\nCongratulations you are placed in ${company.name}!😍😍😍.`;
         }
       } else {
         disqualStudents.push(prevQualStudent.studentEmail);
         await Company.findOneAndUpdate(
           {
-            id: companyId,
+            _id: companyId,
             "appliedStudents.studentEmail": {
               $eq: prevQualStudent.studentEmail,
             },
@@ -128,7 +127,8 @@ module.exports.rounds_result = async (req, res) => {
         );
       }
     }
-
+    // console.log("qualified st", qualStudents);
+    // console.log("disqualified st", disqualStudents);
     try {
       if (qualStudents.length != 0) {
         await transporter.sendMail(
@@ -141,7 +141,9 @@ module.exports.rounds_result = async (req, res) => {
           async (error, data) => {
             if (error) {
               console.log(error);
-              res.status(500).json({ message: "ERROR SENDING MAIL !!!" });
+              return res
+                .status(500)
+                .json({ message: "ERROR SENDING MAIL !!!" });
             } else {
               if (disqualStudents.length != 0) {
                 await transporter.sendMail(
@@ -154,7 +156,7 @@ module.exports.rounds_result = async (req, res) => {
                   (error, data) => {
                     if (error) {
                       console.log(error);
-                      res
+                      return res
                         .status(500)
                         .json({ message: "ERROR SENDING MAIL !!!" });
                     } else {
@@ -164,13 +166,16 @@ module.exports.rounds_result = async (req, res) => {
                         " messageId: ",
                         data.messageId
                       );
-                      res
+                      return res
                         .status(200)
                         .json({ message: "NOTIFICATION MAIL SENT !!!" });
                     }
                   }
                 );
               }
+              return res
+                .status(200)
+                .json({ message: "Email sent to all qualified students only" });
             }
           }
         );
@@ -178,12 +183,11 @@ module.exports.rounds_result = async (req, res) => {
     } catch (err) {
       console.log("err in rounds_result", err);
     }
-  } catch {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Error while updating the company details.",
-      });
+  } catch (err) {
+    console.log(err);
+    return res.status(400).json({
+      success: false,
+      message: "Error while updating the company details.",
+    });
   }
 };
