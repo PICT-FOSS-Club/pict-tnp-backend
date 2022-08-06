@@ -68,13 +68,13 @@ router.get(
 );
 
 // // get round{num} applied students for a company
-// router.get('/admin/company/applied/:number/:companyId', authAdmin, adminController.get_company_round_applied_students);
+router.get('/admin/company/applied/:number/:companyId', authAdmin, adminController.get_company_round_applied_students);
 
 // // get round{num} qualified students for a company
-// router.get('/admin/company/qualified/:number/:companyId', authAdmin, adminController.get_company_round_qualified_students);
+router.get('/admin/company/qualified/:number/:companyId', authAdmin, adminController.get_company_round_qualified_students);
 
 // // get round{num} disqualified students for a company
-// router.get('/admin/company/disqualified/:number/:companyId', authAdmin, adminController.get_company_round_disqualified_students);
+router.get('/admin/company/disqualified/:number/:companyId', authAdmin, adminController.get_company_round_disqualified_students);
 
 //
 //Generate Placement Report List:

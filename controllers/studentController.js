@@ -171,7 +171,7 @@ module.exports.apply_company = async (req, res) => {
         .status(403)
         .json({ success: false, message: "No such Company exist" });
     }
-
+    // handle start and endDate logic: FRONTEND
     // finding if student already exists in company's appliedStudents array
     const studentExists = await Company.findOne({
       $and: [
@@ -179,81 +179,35 @@ module.exports.apply_company = async (req, res) => {
         { "appliedStudents.studentId": req.student._id },
       ],
     });
-
-    // console.log("stu", studentExists)
-
     if (studentExists) {
       return res.status(400).json({
         success: false,
         message: "You are already applied to this company",
       });
     }
-
     // let frontend handle the gte 20 c.t.c. part
-
     // currentRound and finalResult are by default stored 0 and false in db
     const student = await Student.findById(req.student._id);
-
-    //get the student branch:
-    const studentBranch = student.branch;
-    const csApplicable = company.criteria.branch.cs;
-    const itApplicable = company.criteria.branch.it;
-    const entcApplicable = company.criteria.branch.entc;
-
-    let canApply = false;
-    let myArray = [];
-
-    if (studentBranch === "cs") {
-      if (csApplicable) {
-        canApply = true;
-      }
-    } else if (studentBranch === "it") {
-      if (itApplicable) {
-        canApply = true;
-      }
-    } else if (studentBranch === "entc") {
-      if (entcApplicable) {
-        canApply = true;
-      }
-    }
-
-    //Course for student - either Ug or Pg:
-    const companyCriteriaCourse = company.criteria.courseName.ug;
-    const studentCourse = student.isUg;
-
-    if (companyCriteriaCourse !== studentCourse) {
-      canApply = false;
-    }
-
-    const status = !canApply ? 403 : 200;
-    if (status === 200) {
-      student.appliedCompanies.push({
-        companyId: company.id,
-        name: company.name,
-        totalRounds: company.totalRounds,
-      });
-
-      company.appliedStudents.push({
-        studentId: student.id,
-        email: student.email,
-      });
-    }
-
+    console.log(student);
+    student.appliedCompanies.push({
+      companyId: company._id,
+      name: company.name,
+      totalRounds: company.totalRounds,
+    });
+    company.appliedStudents.push({
+      studentId: student._id,
+      studentName: `${student.firstName} ${student.middleName} ${student.lastName}`,
+      studentEmail: student.email
+    });
     // not used {validateBeforeSave:false}
     await company.save();
     await student.save();
-
     // here sending company.appliedStudents only for testing
-    return res.status(status).json({
+    return res.status(200).json({
       success: true,
-      message:
-        status === 200
-          ? "You have succesfully applied to this company"
-          : "You cannot apply to this company",
-      status: status,
+      message: "You've Successfully applied to this company",
     });
   } catch (err) {
-    console.log("Error", err);
     return res.send(err);
   }
 };
