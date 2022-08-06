@@ -49,6 +49,11 @@ const companySchema = new mongoose.Schema({
       it: { type: Boolean },
       entc: { type: Boolean },
     },
+    gender: {
+      male: { type: Boolean },
+      female: { type: Boolean },
+      both: { type: Boolean },
+    },
     cgpa: {
       type: Number,
     },
@@ -94,28 +99,30 @@ const companySchema = new mongoose.Schema({
       },
     },
   ],
-  appliedStudents: [{
-    studentId: {
+  appliedStudents: [
+    {
+      studentId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Student'
-    },
-    studentName: {
+        ref: "Student",
+      },
+      studentName: {
         type: String,
-        required: true
-    },
-    studentEmail: {
+        required: true,
+      },
+      studentEmail: {
         type: String,
-        required: true
-    },
-    roundCleared: {
+        required: true,
+      },
+      roundCleared: {
         type: Number,
-        default: 0
-    },
-    studentResult: {
+        default: 0,
+      },
+      studentResult: {
         type: Boolean,
-        default: true
-    }
-}],
+        default: true,
+      },
+    },
+  ],
   // This indicate whether Drive is Ended
   result: {
     type: Boolean,

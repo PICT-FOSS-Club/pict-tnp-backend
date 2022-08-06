@@ -171,7 +171,7 @@ module.exports.apply_company = async (req, res) => {
         .status(403)
         .json({ success: false, message: "No such Company exist" });
     }
-    // handle start and endDate logic: FRONTEND
+
     // finding if student already exists in company's appliedStudents array
     const studentExists = await Company.findOne({
       $and: [
@@ -179,33 +179,150 @@ module.exports.apply_company = async (req, res) => {
         { "appliedStudents.studentId": req.student._id },
       ],
     });
+
     if (studentExists) {
       return res.status(400).json({
         success: false,
         message: "You are already applied to this company",
       });
     }
+
     // let frontend handle the gte 20 c.t.c. part
+
     // currentRound and finalResult are by default stored 0 and false in db
     const student = await Student.findById(req.student._id);
-    console.log(student);
-    student.appliedCompanies.push({
-      companyId: company._id,
-      name: company.name,
-      totalRounds: company.totalRounds,
-    });
-    company.appliedStudents.push({
-      studentId: student._id,
-      studentName: `${student.firstName} ${student.middleName} ${student.lastName}`,
-      studentEmail: student.email
-    });
+
+    //get the student branch:
+    const studentBranch = student.branch;
+    const csApplicable = company.criteria.branch.cs;
+    const itApplicable = company.criteria.branch.it;
+    const entcApplicable = company.criteria.branch.entc;
+
+    console.log("branch of student:", studentBranch);
+    console.log("branches", csApplicable, itApplicable, entcApplicable);
+
+    let canApply = false;
+    // let myArray = [];
+
+    if (studentBranch === "cs") {
+      console.log("Student branch is cs!");
+      if (csApplicable) {
+        canApply = true;
+      }
+    } else if (studentBranch === "it") {
+      console.log("Student branch is it!");
+      if (itApplicable) {
+        canApply = true;
+      }
+    } else if (studentBranch === "entc") {
+      console.log("Student branch is entc!");
+      if (entcApplicable) {
+        canApply = true;
+      }
+    }
+    console.log("canapply after branch cheking", canApply);
+
+    //Course for student - either Ug or Pg:
+    const companyCriteriaCourse = company.criteria.courseName.ug;
+    const studentCourse = student.isUg;
+
+    console.log("companyCriteriaCourse", companyCriteriaCourse);
+    console.log("studentCourse", studentCourse);
+
+    if (companyCriteriaCourse !== studentCourse) {
+      canApply = false;
+    }
+    console.log("canapply after course cheking", canApply);
+
+    //gender criteria:
+    const studentGender = student.gender;
+    const maleApplicable = company.criteria.gender.male;
+    const femaleApplicable = company.criteria.gender.female;
+    const bothApplicable = company.criteria.gender.both;
+
+    console.log("student gender", studentGender);
+    console.log(
+      "genders applicable:",
+      maleApplicable,
+      femaleApplicable,
+      bothApplicable
+    );
+
+    if (studentGender == "female") {
+      if (!femaleApplicable) {
+        canApply = false;
+      }
+    } else if (studentGender == "male") {
+      if (!maleApplicable) {
+        canApply = false;
+      }
+    }
+    console.log("canapply after gender cheking", canApply);
+
+    //get the student's hsc and ssc:
+    const studentSscPercentage = student.sscPercentage;
+
+    // const studentIsBoth = student.isBoth;
+    // const studentIsHsc = student.isHsc;
+    // // const studentIsDiploma = student.isDiploma;
+
+    // const studentHscPercentage = student.hscPercentage;
+    // const studentDiplomaPercentage = student.diplomaPercentage;
+
+    if (studentSscPercentage < company.criteria.sscPercentage) {
+      canApply = false;
+    }
+    console.log("canapply after ssc cheking", canApply);
+
+    // diploma percentage no schema
+    // handle for hsc and diploma
+    // if(studentIsHsc){
+    //     if(studentHscPercentage < company.criteria.hscPercentage){
+    //        canApply = false;
+    //     }
+    // }else{
+    //   // if(studentDiplomaPercentage < company.criteria.){
+    //     canApply = false;
+    //   }
+    // }
+
+    //get the student's hsc and ssc:
+    // const studentTEFirstSemPercentage = student.thirdYearFirstSemCgpa;
+    // if(studentTEFirstSemPercentage < company.criteria.cgpa){
+    //   canApply = false;
+    // }
+    // let frontend handle the gte 20 c.t.c. part
+    // currentRound and finalResult are by default stored 0 and false in db
+    // const student = await Student.findById(req.student._id);
+    // console.log(student);
+
+    const status = !canApply ? 403 : 200;
+    console.log("Final status cheking", status);
+
+    if (status === 200) {
+      student.appliedCompanies.push({
+        companyId: company._id,
+        name: company.name,
+        totalRounds: company.totalRounds,
+      });
+      company.appliedStudents.push({
+        studentId: student._id,
+        studentName: `${student.firstName} ${student.middleName} ${student.lastName}`,
+        studentEmail: student.email,
+      });
+    }
+
     // not used {validateBeforeSave:false}
     await company.save();
     await student.save();
     // here sending company.appliedStudents only for testing
-    return res.status(200).json({
+    return res.status(status).json({
       success: true,
-      message: "You've Successfully applied to this company",
+      message:
+        status === 200
+          ? "You have succesfully applied to this company"
+          : "You cannot apply to this company",
+      status: status,
     });
   } catch (err) {
     return res.send(err);
