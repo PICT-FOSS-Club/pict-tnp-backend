@@ -305,6 +305,28 @@ module.exports.apply_company = async (req, res) => {
     // const student = await Student.findById(req.student._id);
     // console.log(student);
 
+    //END DATE CRITERIA:
+    //checking the End Date:
+
+    var today = new Date();
+    var todaysDate =
+      today.getFullYear() +
+      "-" +
+      (today.getMonth() + 1) +
+      "-" +
+      today.getDate();
+
+    let companyEndDate = company.endDate;
+    let formattedCompanyEndDate = companyEndDate.toISOString().split("T")[0];
+
+    // console.log("Todays date is:", todaysDate);
+    // console.log("Companys end date is:", formattedCompanyEndDate);
+
+    if (formattedCompanyEndDate < todaysDate) {
+      canApply = false;
+    }
+    console.log("canApply after end-date checking:", canApply);
+
     const status = !canApply ? 403 : 200;
     console.log("Final status cheking", status);
 
