@@ -319,10 +319,10 @@ module.exports.apply_company = async (req, res) => {
     let companyEndDate = company.endDate;
     let formattedCompanyEndDate = companyEndDate.toISOString().split("T")[0];
 
-    // console.log("Todays date is:", todaysDate);
-    // console.log("Companys end date is:", formattedCompanyEndDate);
+    console.log("Todays date is:", todaysDate);
+    console.log("Companys end date is:", formattedCompanyEndDate);
 
-    if (formattedCompanyEndDate < todaysDate) {
+    if (formattedCompanyEndDate > todaysDate) {
       canApply = false;
     }
     console.log("canApply after end-date checking:", canApply);
