@@ -54,11 +54,18 @@ const companySchema = new mongoose.Schema({
       female: { type: Boolean },
       both: { type: Boolean },
     },
-    cgpa: {
+    engCgpa: {
       type: Number,
     },
-    //hsc and ssc percentage criteria not mentioned for few companies
-    // either default -> 0 (or) undefined.
+    //New changes:
+    RequiredAmcatScore: {
+      type: Number,
+      default: 0,
+    },
+    RequiredAttendance: {
+      type: Number,
+      default: 0,
+    },
     sscPercentage: {
       type: Number,
     },
