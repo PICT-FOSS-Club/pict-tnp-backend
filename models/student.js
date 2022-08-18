@@ -4,291 +4,289 @@ const bcrypt = require("bcrypt");
 const Joi = require("joi");
 const jwt = require("jsonwebtoken");
 
-const studentSchema = new mongoose.Schema({
-  // TE roll number
-  rollNumber: {
-    type: Number,
-    required: true,
-    unique: true,
-    maxlength: 5,
-  },
-  teSection: {
-    type: Number,
-  },
-  firstName: {
-    type: String,
-    required: true,
-  },
-  middleName: {
-    type: String,
-    required: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    validate: [isEmail, "Please Enter a Valid Email"],
-  },
-  alternateEmail: {
-    type: String,
-    required: true,
-    validate: [isEmail, "Please Enter a Valid Email"],
-  },
-  phone: {
-    type: Number,
-    required: true,
-    unique: true,
-  },
-  alternatePhone: {
-    type: Number,
-    required: true,
-  },
-  dob: {
-    type: Date,
-    required: true,
-  },
-  gender: {
-    type: String,
-    required: true,
-  },
-  currentAddress: {
-    type: String,
-    required: true,
-  },
-  permanentAddress: {
-    type: String,
-    required: true,
-  },
-  branch: {
-    type: String,
-    required: true,
-  },
-  // college registration number
-  pictRegistrationId: {
-    type: String,
-    required: true,
-    lowercase: true,
-    unique: true,
-  },
-  // university Permanent Registration number
-  prn: {
-    type: String,
-    required: true,
-    tolower: true,
-    unique: true,
-  },
-
-  // SSC details
-  // percentage
-  sscPercentage: {
-    type: Number,
-    required: true,
-    min: 0,
-    max: 100,
-  },
-  sscBoard: {
-    type: String,
-    required: true,
-    tolower: true,
-  },
-  yearOFPassingSsc: {
-    type: Number,
-    required: true,
-  },
-  gapAfterSsc: {
-    type: Number,
-    required: true,
-  },
-  reasonOfGapSsc: {
-    type: String,
-  },
-
-  isHsc: {
-    type: Boolean,
-    requied: true,
-  },
-
-  isDiploma: {
-    type: Boolean,
-    requied: true,
-  },
-
-  isBoth: {
-    type: Boolean,
-    requied: true,
-  },
-
-  // HSC details
-  // percentage in 12th
-  hscPercentage: {
-    type: Number,
-    min: -1,
-    max: 100,
-  },
-  hscBoard: {
-    type: String,
-  },
-  yearOFPassingHsc: {
-    type: Number,
-  },
-  gapAfterHsc: {
-    type: Number,
-  },
-  reasonOfGapHsc: {
-    type: String,
-  },
-  // Diploma details
-
-  //Year Gap
-  yearGap: {
-    type: Number,
-  },
-  reasonOfYearGap: {
-    type: String,
-  },
-
-  // percentage
-  diplomaPercentage: {
-    type: Number,
-    min: -1,
-    max: 100,
-  },
-  diplomaUniversity: {
-    type: String,
-  },
-  yearOfPassingDipoma: {
-    type: Number,
-  },
-  gapAfterDiploma: {
-    type: Number,
-  },
-  reasonForGapDiploma: {
-    type: String,
-  },
-
-  // collage  details
-
-  yearOfStartingCollege: {
-    type: Number,
-    required: true,
-  },
-  firstYearFirstSemCgpa: {
-    type: Number,
-    required: true,
-    max: 10,
-  },
-  firstYearSecondSemCgpa: {
-    type: Number,
-    required: true,
-    max: 10,
-  },
-  secondYearfirstSemCgpa: {
-    type: Number,
-    required: true,
-    max: 10,
-  },
-  secondYearSecondSemCgpa: {
-    required: true,
-    type: Number,
-    max: 10,
-  },
-  thirdYearFirstSemCgpa: {
-    type: Number,
-    required: true,
-    max: 10,
-  },
-  aggrCgpa: {
-    type: Number,
-    required: true,
-    max: 10,
-  },
-  activeBacklog: {
-    type: Number,
-    required: true,
-  },
-  passiveBacklog: {
-    type: Number,
-    required: true,
-  },
-  //  candidate a year down
-  yearDrop: {
-    type: String,
-    required: true,
-  },
-  // aadhar card details
-  aadharCard: {
-    type: Number,
-    unique: true,
-    required: true,
-  },
-  // panCard
-  panCard: {
-    type: String,
-    required: true,
-  },
-  passportCard: {
-    type: String,
-    required: true,
-  },
-  citizenship: {
-    type: String,
-    required: true,
-  },
-  planningForHigherEducation: {
-    type: String,
-    required: true,
-  },
-  // Amcat details
-  AmcatScore: {
-    type: Number,
-    default: 0,
-  },
-  attendance: {
-    type: Number,
-    default: 0,
-  },
-  password: {
-    type: String,
-    required: true,
-    minlength: 7,
-  },
-  isLTE20: {
-    type: Boolean,
-    default: false,
-  },
-  isGT20: {
-    type: Boolean,
-    default: false,
-  },
-  applications: [
-    {
-      _id: false,
-      applicationId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Application",
-      }
+const studentSchema = new mongoose.Schema(
+  {
+    // TE roll number
+    rollNumber: {
+      type: Number,
+      required: true,
+      unique: true,
+      maxlength: 5,
     },
-  ],
+    teSection: {
+      type: Number,
+    },
+    firstName: {
+      type: String,
+      required: true,
+    },
+    middleName: {
+      type: String,
+      required: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      validate: [isEmail, "Please Enter a Valid Email"],
+    },
+    alternateEmail: {
+      type: String,
+      required: true,
+      validate: [isEmail, "Please Enter a Valid Email"],
+    },
+    phone: {
+      type: Number,
+      required: true,
+      unique: true,
+    },
+    alternatePhone: {
+      type: Number,
+      required: true,
+    },
+    dob: {
+      type: Date,
+      required: true,
+    },
+    gender: {
+      type: String,
+      required: true,
+    },
+    currentAddress: {
+      type: String,
+      required: true,
+    },
+    permanentAddress: {
+      type: String,
+      required: true,
+    },
+    branch: {
+      type: String,
+      required: true,
+    },
+    // college registration number
+    pictRegistrationId: {
+      type: String,
+      required: true,
+      lowercase: true,
+      unique: true,
+    },
+    // university Permanent Registration number
+    prn: {
+      type: String,
+      required: true,
+      tolower: true,
+      unique: true,
+    },
 
-  //Ug and Pg boolean
-  isUg: { type: Boolean, default: true },
+    // SSC details
+    // percentage
+    sscPercentage: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 100,
+    },
+    sscBoard: {
+      type: String,
+      required: true,
+      tolower: true,
+    },
+    yearOFPassingSsc: {
+      type: Number,
+      required: true,
+    },
+    gapAfterSsc: {
+      type: Number,
+      required: true,
+    },
+    reasonOfGapSsc: {
+      type: String,
+    },
 
-  //new fields :
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  resetPasswordTokenForForgotPassword: String,
-});
+    isHsc: {
+      type: Boolean,
+      requied: true,
+    },
+
+    isDiploma: {
+      type: Boolean,
+      requied: true,
+    },
+
+    isBoth: {
+      type: Boolean,
+      requied: true,
+    },
+
+    // HSC details
+    // percentage in 12th
+    hscPercentage: {
+      type: Number,
+      min: -1,
+      max: 100,
+    },
+    hscBoard: {
+      type: String,
+    },
+    yearOFPassingHsc: {
+      type: Number,
+    },
+    gapAfterHsc: {
+      type: Number,
+    },
+    reasonOfGapHsc: {
+      type: String,
+    },
+    // Diploma details
+
+    //Year Gap
+    yearGap: {
+      type: Number,
+    },
+    reasonOfYearGap: {
+      type: String,
+    },
+
+    // percentage
+    diplomaPercentage: {
+      type: Number,
+      min: -1,
+      max: 100,
+    },
+    diplomaUniversity: {
+      type: String,
+    },
+    yearOfPassingDipoma: {
+      type: Number,
+    },
+    gapAfterDiploma: {
+      type: Number,
+    },
+    reasonForGapDiploma: {
+      type: String,
+    },
+
+    // collage  details
+
+    yearOfStartingCollege: {
+      type: Number,
+      required: true,
+    },
+    firstYearFirstSemCgpa: {
+      type: Number,
+      required: true,
+      max: 10,
+    },
+    firstYearSecondSemCgpa: {
+      type: Number,
+      required: true,
+      max: 10,
+    },
+    secondYearfirstSemCgpa: {
+      type: Number,
+      required: true,
+      max: 10,
+    },
+    secondYearSecondSemCgpa: {
+      required: true,
+      type: Number,
+      max: 10,
+    },
+    thirdYearFirstSemCgpa: {
+      type: Number,
+      required: true,
+      max: 10,
+    },
+    aggrCgpa: {
+      type: Number,
+      required: true,
+      max: 10,
+    },
+    activeBacklog: {
+      type: Number,
+      required: true,
+    },
+    passiveBacklog: {
+      type: Number,
+      required: true,
+    },
+    //  candidate a year down
+    yearDrop: {
+      type: String,
+      required: true,
+    },
+    // aadhar card details
+    aadharCard: {
+      type: Number,
+      unique: true,
+      required: true,
+    },
+    // panCard
+    panCard: {
+      type: String,
+      required: true,
+    },
+    passportCard: {
+      type: String,
+      required: true,
+    },
+    citizenship: {
+      type: String,
+      required: true,
+    },
+    planningForHigherEducation: {
+      type: String,
+      required: true,
+    },
+    // Amcat details
+    AmcatScore: {
+      type: Number,
+      default: 0,
+    },
+    attendance: {
+      type: Number,
+      default: 0,
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 7,
+    },
+    isLTE20: {
+      type: Boolean,
+      default: false,
+    },
+    isGT20: {
+      type: Boolean,
+      default: false,
+    },
+
+    //Ug and Pg boolean
+    isUg: { type: Boolean, default: true },
+
+    //new fields :
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    resetPasswordTokenForForgotPassword: String,
+  }, 
+  {timestamps: true}
+);
 
 // * This virtual will make relation between Job and Company
-studentSchema.virtual('application', {
+studentSchema.virtual('applications', {
   ref: "Application",
-  localField: "applicationId",
-  foreignField: "_id"
-})
+  localField: "_id",
+  foreignField: "studentId",
+  _id: false
+});
+
+studentSchema.set('toObject', { virtuals: true });
+studentSchema.set('toJSON', { virtuals: true });
 
 studentSchema.pre("save", async function (next) {
   if (this.isModified("password")) {

@@ -73,30 +73,13 @@ const handleErrors = (err) => {
 
 const tokenAge = parseInt(process.env.JWT_AGE);
 
-// const createToken = (id) => {
-//   return jwt.sign({ id }, process.env.JWT_SECRET, {
-//     expiresIn: tokenAge,
-//   });
-// };
-
 // login student
 module.exports.login_student = async (req, res) => {
-  // const { email, password } = req.body;
-  // try {
-  //   const student = await Student.login(email, password);
-  //   const token = createToken(student._id);
-  //   res.cookie("token", token, { httpOnly: true, maxAge: tokenAge * 1000 });
-  //   res.cookie("usertype", "student", { httpOnly: true, maxAge: tokenAge * 1000 });
-  //   res.status(200).send({ student, success: true });
-  // } catch (err) {
-  //   const errors = handleErrors(err);
-  //   res.status(400).json({ errors, success: false });
-  // }
   const { email, password } = req.body;
   try {
     let token;
     // const student = await Student.login(email, password);
-    const student = await Student.findOne({ email: email });
+    const student = await Student.findOne({ email: email }).populate({path: 'applications'});
     if (student) {
       const isMatch = await bcrypt.compare(password, student.password);
       // token = createToken(student._id);
@@ -108,11 +91,6 @@ module.exports.login_student = async (req, res) => {
           maxAge: tokenAge * 1000,
           expires: new Date(Date.now() + 2483000000),
         }); //30 days expiry
-        // res.cookie("usertype", "student", {
-        //   httpOnly: true,
-        //   maxAge: tokenAge * 1000,
-        //   expires: new Date(Date.now() + 2483000000),
-        // });
         res.status(200).send({ student, token, success: true });
       } else {
         res.status(400).json({ error: "invalid creds" });
@@ -137,7 +115,7 @@ module.exports.logout_student = (req, res) => {
 // student profile
 module.exports.student_profile = async (req, res) => {
   try {
-    const student = await Student.findById(req.student._id);
+    const student = await Student.findById(req.student._id).populate({path: 'applications'});
     res.status(200).json({ student, success: true });
   } catch {
     res.status(400).json({ success: false, message: "Login or Signup" });
@@ -147,11 +125,9 @@ module.exports.student_profile = async (req, res) => {
 module.exports.drive_compaines = async (req, res) => {
   try {
     const date = new Date().toISOString();
-    const companyList = await Company.find();
-    // const companyList = await Company.find({
-    //   $and: [{ startDate: { $lte: date } }, { endDate: { $gte: date } }],
-    // });
-    // const companyList = await Company.find({ driveEnd: { $eq: false } });
+    // ! here dont add .exec after populate, if you do then send the response inside exec function else companyLost will be undefined, so better not to use exec function here 
+    const companyList = await Company.find().populate({ path: 'jobDescriptions' })
+    console.log('company list', companyList)
     res.status(200).json({
       success: true,
       message: "current companies drive",
@@ -165,24 +141,148 @@ module.exports.drive_compaines = async (req, res) => {
 };
 
 module.exports.apply_company = async (req, res) => {
-  try{
+  try {
     const job = await Job.findById(req.body.jobId);
-    if(!job){
+    if (!job) {
       return res
         .status(403)
-        .json({ success: false, message:"Job not found"});
+        .json({ success: false, message: "Job not found" });
     }
 
-    const application = await Application.create({ jobId: req.body.jobId, studentId: req.student._id });
-
     const student = await Student.findById(req.student._id);
-    student.applications.push({ applicationId: application._id });
-    await student.save();
-    res
-      .status(201)
-      .json({success: true, message: "Application created successfully."})
+
+    // todo: checking eligible before making student's application
+    // * Criteria order 
+    // * 1. check branch - DONE
+    // * 2. Course - ug/pg - DONE
+    // * 3. Gender - DONE
+    // ! 4. HSC & SSC percentage - SSC DONE, HSC REMAINS
+    // ! 5. End date (last date of application) Criteria - DONE WITH BACKEND, CHECK WITH FRONTEND 
+    // * 6. Amcat criteria - DONE
+    // * 7. Attendance Criteria - DONE
+    // * 8. CGPA criteria - DONE
+
+    let canApply = true;
+
+    // * branch checking
+
+    let applicableBranchArray = [];
+    const csApplicable = job.criteria.branch.cs;
+    if (csApplicable) applicableBranchArray.push("cs");
+    const itApplicable = job.criteria.branch.it;
+    if (itApplicable) applicableBranchArray.push("it");
+    const entcApplicable = job.criteria.branch.entc;
+    if (entcApplicable) applicableBranchArray.push("entc");
+
+    // console.table(applicableBranchArray);
+
+    if (!applicableBranchArray.includes(student.branch)) {
+      canApply = false;
+    }
+    console.log("canapply after branch cheking", canApply);
+
+    // * checking course
+    const companyCriteriaCourse = job.criteria.courseName.ug;
+
+    if (companyCriteriaCourse !== student.isUg) {
+      canApply = false;
+    }
+    console.log("canapply after course cheking", canApply);
+
+    // * Gender criteria checking
+    const studentGender = student.gender;
+    const maleApplicable = job.criteria.gender.male;
+    const femaleApplicable = job.criteria.gender.female;
+    const bothApplicable = job.criteria.gender.both;
+
+    console.table(job.criteria.gender);
+
+    if (!bothApplicable) {
+      if (studentGender == "female") {
+        if (!femaleApplicable) {
+          canApply = false;
+        }
+      } else if (studentGender == "male") {
+        if (!maleApplicable) {
+          canApply = false;
+        }
+      }
+    }
+    console.log("canapply after gender cheking", canApply);
+
+    // * checking SSC percentage
+    // ! HSC % checking remains as WDKT student has done hsc or diploma and company criteria are
+    const studentSscPercentage = student.sscPercentage;
+
+    if (studentSscPercentage < job.criteria.sscPercentage) {
+      console.log(
+        "ssc per:",
+        studentSscPercentage,
+        " , company requirement",
+        job.criteria.sscPercentage
+      );
+      canApply = false;
+    }
+    console.log("canapply after ssc cheking", canApply);
+
+    // * checking End date (last date of application) Criteria
+    var today = new Date();
+    // var todaysDate =
+    //   today.getFullYear() +
+    //   "-" +
+    //   (today.getMonth() + 1) +
+    //   "-" +
+    //   today.getDate();
+
+    // ! Note -  new Date(kolkata....).... will give date-time in dd/mm/yyyy ss:mm:hh format
+    // ! so to convert it into mongoose format for checking create another function new DatetodaysDate) which will give mongoose format YYYY-MM-DDTHH:MM:SS.SSSZ 
+    var todaysDate = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+    todaysDate = new Date(todaysDate);
+    // * above todaysDate is in object type, convert it into ISOStrig type not string(thurs 21 august 2022) type
+    todaysDate = todaysDate.toISOString();
+    let companyEndDate = job.endDate;
+    let formattedCompanyEndDate = companyEndDate.toISOString();
+    console.log("Todays date is:", todaysDate, " Companys end date is:", formattedCompanyEndDate);
+
+    // *  todo : Check Date Criteria
+    // ! careful with logic here
+    if (formattedCompanyEndDate < todaysDate) {
+      canApply = false;
+    }
+    console.log("canApply after end-date checking:", canApply);
+
+    // * checking amcat Criteria
+    // ! note requiredAmcatScore is in job where RequiredAmcatScore was in company
+    if (job.criteria.requiredAmcatScore > student.AmcatScore) {
+      canApply = false;
+    }
+    console.log("canApply after AMCAT checking:", canApply);
+
+    // ! note requiredAttendance is in job where RequiredAttendance was in company
+    // if (job.criteria.requiredAttendance > student.attendance) {
+    //   canApply = false;
+    // }
+    // console.log("canApply after attendance checking:", canApply);
+
+    if (job.criteria.engCgpa > student.aggrCgpa) {
+      canApply = false;
+    }
+    console.log("canApply after aggr.CGPA checking:", canApply);
+
+    if (canApply) {
+      const application = await Application.create({ jobId: req.body.jobId, studentId: req.student._id });
+      // student.applications.push({ applicationId: application._id });
+      await student.save();
+      res
+        .status(201)
+        .json({ success: true, message: "Application created successfully." })
+    } else {
+      res
+        .status(403)
+        .json({ success: false, message: "You can not apply for this company." })
+    }
   }
-  catch(err){
+  catch (err) {
     console.log(err);
     res
       .status(400)
@@ -190,192 +290,6 @@ module.exports.apply_company = async (req, res) => {
   }
 }
 
-// module.exports.apply_company = async (req, res) => {
-//   try {
-//     // studentApplyForCompanies later - companyid take from req.body._id
-//     const company = await Company.findById(req.body.companyId);
-//     if (!company) {
-//       return res
-//         .status(403)
-//         .json({ success: false, message: "No such Company exist" });
-//     }
-
-//     // finding if student already exists in company's appliedStudents array
-//     const studentExists = await Company.findOne({
-//       $and: [
-//         { _id: req.body.companyId },
-//         { "appliedStudents.studentId": req.student._id },
-//       ],
-//     });
-
-//     if (studentExists) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "You are already applied to this company",
-//       });
-//     }
-
-//     // let frontend handle the gte 20 c.t.c. part
-
-//     // currentRound and finalResult are by default stored 0 and false in db
-//     const student = await Student.findById(req.student._id);
-
-//     //get the student branch:
-//     const studentBranch = student.branch;
-//     const csApplicable = company.criteria.branch.cs;
-//     const itApplicable = company.criteria.branch.it;
-//     const entcApplicable = company.criteria.branch.entc;
-
-//     console.log("branch of student:", studentBranch);
-//     console.log("branches", csApplicable, itApplicable, entcApplicable);
-
-//     let canApply = false;
-//     // let myArray = [];
-
-//     if (studentBranch === "cs") {
-//       console.log("Student branch is cs!");
-//       if (csApplicable) {
-//         canApply = true;
-//       }
-//     } else if (studentBranch === "it") {
-//       console.log("Student branch is it!");
-//       if (itApplicable) {
-//         canApply = true;
-//       }
-//     } else if (studentBranch === "entc") {
-//       console.log("Student branch is entc!");
-//       if (entcApplicable) {
-//         canApply = true;
-//       }
-//     }
-//     console.log("canapply after branch cheking", canApply);
-
-//     //Course for student - either Ug or Pg:
-//     const companyCriteriaCourse = company.criteria.courseName.ug;
-//     const studentCourse = student.isUg;
-
-//     console.log("companyCriteriaCourse", companyCriteriaCourse);
-//     console.log("studentCourse", studentCourse);
-
-//     if (companyCriteriaCourse !== studentCourse) {
-//       canApply = false;
-//     }
-//     console.log("canapply after course cheking", canApply);
-
-//     //gender criteria:
-//     const studentGender = student.gender;
-//     console.log("company.criteria.sscPercentage");
-//     const maleApplicable = company.criteria.gender.male;
-//     const femaleApplicable = company.criteria.gender.female;
-//     const bothApplicable = company.criteria.gender.both;
-
-//     console.log("student gender", studentGender);
-//     console.log(
-//       "genders applicable:",
-//       maleApplicable,
-//       femaleApplicable,
-//       bothApplicable
-//     );
-
-//     if (!bothApplicable) {
-//       if (studentGender == "female") {
-//         if (!femaleApplicable) {
-//           canApply = false;
-//         }
-//       } else if (studentGender == "male") {
-//         if (!maleApplicable) {
-//           canApply = false;
-//         }
-//       }
-//     }
-//     console.log("canapply after gender cheking", canApply);
-
-//     //get the student's hsc and ssc:
-//     const studentSscPercentage = student.sscPercentage;
-
-//     if (studentSscPercentage < company.criteria.sscPercentage) {
-//       console.log(
-//         "ssc per:",
-//         studentSscPercentage,
-//         " ",
-//         company.criteria.sscPercentage
-//       );
-//       canApply = false;
-//     }
-//     console.log("canapply after ssc cheking", canApply);
-
-//     //END DATE CRITERIA:
-//     //checking the End Date:
-
-//     var today = new Date();
-//     var todaysDate =
-//       today.getFullYear() +
-//       "-" +
-//       (today.getMonth() + 1) +
-//       "-" +
-//       today.getDate();
-
-//     let companyEndDate = company.endDate;
-//     let formattedCompanyEndDate = companyEndDate.toISOString().split("T")[0];
-//     console.log("Todays date is:", todaysDate);
-//     console.log("Companys end date is:", formattedCompanyEndDate);
-
-//     /**
-//      * todo : Check Date Criteria
-//      */
-//     if (formattedCompanyEndDate > todaysDate) {
-//       canApply = false;
-//     }
-//     console.log("canApply after end-date checking:", canApply);
-
-//     //Checking Amcat Criteria:
-//     if (company.criteria.RequiredAmcatScore > student.AmcatScore) {
-//       canApply = false;
-//     }
-//     console.log("canApply after AMCAT checking:", canApply);
-
-//     if (company.criteria.RequiredAttendance > student.attendance) {
-//       canApply = false;
-//     }
-//     console.log("canApply after attendance checking:", canApply);
-
-//     if (company.criteria.engCgpa > student.aggrCgpa) {
-//       canApply = false;
-//     }
-//     console.log("canApply after aggr.CGPA checking:", canApply);
-
-//     const status = !canApply ? 403 : 200;
-//     console.log("Final status cheking", status);
-
-//     if (status === 200) {
-//       student.appliedCompanies.push({
-//         companyId: company._id,
-//         name: company.name,
-//         totalRounds: company.totalRounds,
-//       });
-//       company.appliedStudents.push({
-//         studentId: student._id,
-//         studentName: `${student.firstName} ${student.middleName} ${student.lastName}`,
-//         studentEmail: student.email,
-//       });
-//     }
-
-//     // not used {validateBeforeSave:false}
-//     await company.save();
-//     await student.save();
-//     // here sending company.appliedStudents only for testing
-//     return res.status(status).json({
-//       success: true,
-//       message:
-//         status === 200
-//           ? "You have succesfully applied to this company"
-//           : "You cannot apply to this company",
-//       status: status,
-//     });
-//   } catch (err) {
-//     return res.send(err);
-//   }
-// };
 
 // student reset Password
 module.exports.student_reset_password = async (req, res) => {
