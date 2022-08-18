@@ -264,28 +264,13 @@ const studentSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  appliedCompanies: [
+  applications: [
     {
-      companyId: {
+      _id: false,
+      applicationId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Company",
-      },
-      name: {
-        type: String,
-        required: true,
-      },
-      totalRounds: {
-        type: Number,
-        required: true,
-      },
-      roundCleared: {
-        type: Number,
-        default: 0,
-      },
-      result: {
-        type: Boolean,
-        default: true,
-      },
+        ref: "Application",
+      }
     },
   ],
 
@@ -297,6 +282,13 @@ const studentSchema = new mongoose.Schema({
   resetPasswordExpire: Date,
   resetPasswordTokenForForgotPassword: String,
 });
+
+// * This virtual will make relation between Job and Company
+studentSchema.virtual('application', {
+  ref: "Application",
+  localField: "applicationId",
+  foreignField: "_id"
+})
 
 studentSchema.pre("save", async function (next) {
   if (this.isModified("password")) {

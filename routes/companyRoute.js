@@ -4,8 +4,11 @@ const companyController = require("../controllers/companyController");
 
 const router = new express.Router();
 
-// post company drive
-router.post("/company/drive", authAdmin, companyController.apply_drive);
+// add company 
+router.post("/company/add", authAdmin, companyController.add_company);
+
+// add company job
+router.post("/company/job/add", authAdmin, companyController.add_job);
 
 // update company drive
 router.post("/company/drive/update", authAdmin, companyController.drive_update);

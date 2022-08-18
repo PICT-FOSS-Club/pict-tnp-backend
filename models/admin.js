@@ -46,9 +46,7 @@ adminSchema.statics.login = async function (email, password) {
 
 adminSchema.methods.generateAuthToken = async function (){
   try {
-    let tokenGen = jwt.sign({_id:this._id}, process.env.JWT_SECRET);
-    // this.tokens = this.tokens.concat({ token : tokenGen });
-    // await this.save();
+    let tokenGen = jwt.sign({_id: this._id}, process.env.JWT_SECRET);
     return tokenGen;
   } catch (err) {
     console.log('err in generateAuthToken admin',err)

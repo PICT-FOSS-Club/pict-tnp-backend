@@ -1,15 +1,27 @@
+const Job = require("../models/job");
 const Company = require("../models/company");
 const Student = require("../models/student");
 const nodeMailer = require("nodemailer");
 
-module.exports.apply_drive = async (req, res) => {
+module.exports.add_company = async (req, res) => {
   const company = req.body;
   try {
     await Company.create(company);
-    console.log("company", company);
-    res
-      .status(200)
-      .json({ success: true, message: "Company Drive Added Successfully." });
+    res.status(201).json({ success: true, message: "Company Drive Added Successfully." });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: "Error while applying company drive.",
+      errors: err,
+    });
+  }
+};
+
+module.exports.add_job = async (req, res) => {
+  try {
+    await Job.create(req.body);
+    const company = await Company.findById(req.body.companyId).populate({path: 'jobDescriptions'});
+    res.status(201).json({ success: true, company, message: "Job Added Successfully." });
   } catch (err) {
     console.log(err);
     res.status(400).json({
