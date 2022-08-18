@@ -26,7 +26,8 @@ const companySchema = new mongoose.Schema({
 companySchema.virtual("jobDescriptions", {
   ref: "Job",
   localField: "_id",
-  foreignField: "companyId"
+  foreignField: "companyId",
+  _id: false,
 });
 
 companySchema.set('toObject', { virtuals: true });

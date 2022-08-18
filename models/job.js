@@ -107,7 +107,8 @@ jobSchema.virtual('company', {
 jobSchema.virtual("jobApplications", {
     ref: "Application",
     localField: "_id",
-    foreignField: "jobId"
+    foreignField: "jobId",
+    _id: false,
 });
 
 jobSchema.set('toObject', { virtuals: true });
