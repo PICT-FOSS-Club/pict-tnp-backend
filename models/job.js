@@ -96,7 +96,7 @@ const jobSchema = new mongoose.Schema(
             default: false,
         },
     },
-    {timestamps: true}
+    { timestamps: true }
 );
 
 // * We can get all the jobApplications of this Job using Populate as follows:
