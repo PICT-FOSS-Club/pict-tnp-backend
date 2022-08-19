@@ -146,7 +146,6 @@ module.exports.student_profile = async (req, res) => {
 
 module.exports.drive_compaines = async (req, res) => {
   try {
-    const date = new Date().toISOString();
     // const companyList = await Company.find();
     // ! here dont add .exec after populate, if you do then send the response inside exec function else companyLost will be undefined, so better not to use exec function here 
     const companyList = await Company.find().populate({ path: 'jobDescriptions' })
