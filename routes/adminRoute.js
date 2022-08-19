@@ -64,7 +64,10 @@ router.get( "/admin/company/qualified/:number/:companyId", authAdmin, adminContr
 // get round{num} disqualified students for a company
 router.get( "/admin/company/disqualified/:number/:companyId", authAdmin, adminController.get_company_round_disqualified_students);
 
-//Generate Placement Report List:
+// Get Placed students list,excel:
 router.get("/admin/student/placed", authAdmin, adminController.get_placed_students);
+
+// Report Generation
+router.get("/admin/student/report/generate", authAdmin, adminController.generate_report);
 
 module.exports = router;

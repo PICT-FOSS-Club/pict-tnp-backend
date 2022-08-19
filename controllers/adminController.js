@@ -540,7 +540,7 @@ module.exports.get_company_round_disqualified_students = async (req, res) => {
 };
 
 //
-//Generate Placement Report:
+//Generate placed student Report list,excel:
 
 module.exports.get_placed_students = async (req, res) => {
   // const dept = req.query.Dept;
@@ -574,3 +574,12 @@ module.exports.get_placed_students = async (req, res) => {
     .status(200)
     .json({ success: true, message: "List of students", data: students });
 };
+
+// generate report
+module.exports.generate_report = async (req, res) => {
+  try {
+    
+  } catch (err) {
+    console.log(err)
+  }
+}

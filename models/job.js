@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Application = require("./application");
 
 const jobSchema = new mongoose.Schema(
     {
@@ -111,6 +112,18 @@ jobSchema.virtual("jobApplications", {
 
 jobSchema.set('toObject', { virtuals: true });
 jobSchema.set('toJSON', { virtuals: true });
+
+jobSchema.pre("remove", async function(next){
+    // console.log('this',this);
+    // this.model("Application")/remove({ _id: this._id }, next);
+
+
+    
+    // await Application.deleteMany({
+    //     jobId: this._id
+    // });
+    next();
+});
 
 const Job = mongoose.model("Job", jobSchema);
 

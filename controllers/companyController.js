@@ -30,7 +30,7 @@ module.exports.update_company = async (req, res) => {
       success: true,
       message: "Company Details Updated Successfully.",
     });
-  } catch(err) {
+  } catch (err) {
     res.status(400).json({
       success: false,
       error: err,
@@ -50,7 +50,17 @@ module.exports.delete_company = async (req, res) => {
     //   }
     //   console.log('company', company);
     // });
-    await Company.findByIdAndDelete(companyId);
+    // await Company.findByIdAndDelete(companyId);
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "company not found"
+      })
+    }
+
+    await company.remove();
+
     res.status(200).json({
       success: true,
       message: "Company Deleted Successfully.",
@@ -69,11 +79,11 @@ module.exports.delete_company = async (req, res) => {
 module.exports.add_job = async (req, res) => {
   try {
     await Job.create(req.body);
-    const company = await Company.findById(req.body.companyId).populate({path: 'jobDescriptions'});
-    res.status(201).json({ 
-      success: true, 
-      data: company, 
-      message: "Job Added Successfully." 
+    const company = await Company.findById(req.body.companyId).populate({ path: 'jobDescriptions' });
+    res.status(201).json({
+      success: true,
+      data: company,
+      message: "Job Added Successfully."
     });
   } catch (err) {
     res.status(400).json({
@@ -87,7 +97,7 @@ module.exports.add_job = async (req, res) => {
 // Update Company Job
 module.exports.update_job = async (req, res) => {
   const { jobId, job } = req.body;
-  
+
   try {
     // Avoid the changing of companyId and jobResult fields of the Job.
     delete job.companyId, delete job.jobResult;
@@ -96,7 +106,7 @@ module.exports.update_job = async (req, res) => {
       success: true,
       message: "Company Details Updated Successfully.",
     });
-  } catch(err) {
+  } catch (err) {
     res.status(400).json({
       success: false,
       error: err,
@@ -106,25 +116,44 @@ module.exports.update_job = async (req, res) => {
 };
 
 // delete company job
-module.exports.delete_job = async (req, res) => {}
+module.exports.delete_job = async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    console.log('jobId', jobId);
+    const job = await Job.findById(jobId);
+    await
+      console.log('job', job);
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found"
+      })
+    }
+
+    await job.remove();
+    return res.status(200).json({ success: true, message: "Job deleted successfully" })
+  } catch (err) {
+    console.log('err in deleting job', err);
+  }
+}
 
 // add company job round
-module.exports.job_round_add = async (req, res) => {}
+module.exports.job_round_add = async (req, res) => { }
 
 // update company job round
-module.exports.job_round_update = async (req, res) => {}
+module.exports.job_round_update = async (req, res) => { }
 
 // delete company job round
-module.exports.job_round_delete = async (req, res) => {}
+module.exports.job_round_delete = async (req, res) => { }
 
 // declare company job round result
-module.exports.job_round_result_declare = async (req, res) => {}
+module.exports.job_round_result_declare = async (req, res) => { }
 
 // update company job round result
-module.exports.job_round_result_update = async (req, res) => {}
+module.exports.job_round_result_update = async (req, res) => { }
 
 // delete company job round result
-module.exports.job_round_result_delete = async (req, res) => {}
+module.exports.job_round_result_delete = async (req, res) => { }
 
 
 // module.exports.rounds_result = async (req, res) => {

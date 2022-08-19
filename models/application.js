@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Student = require("./student");
 
 const applicationSchema = new mongoose.Schema(
     {
@@ -16,12 +17,12 @@ const applicationSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
-        studentResult:  {
+        studentResult: {
             type: Boolean,
             default: true,
         }
-    }, 
-    {timestamps: true}
+    },
+    { timestamps: true }
 );
 
 // * This virtual will make relation between Application and Job
@@ -42,6 +43,42 @@ applicationSchema.virtual("student", {
 
 applicationSchema.set('toObject', { virtuals: true });
 applicationSchema.set('toJSON', { virtuals: true });
+
+applicationSchema.pre("remove", async function (next) {
+    // todo - handle student LTE20 & GT20  
+    const student = await Student.updateMany({
+        $and: [
+            {
+                $or: [
+                    { "LTE20.status": true },
+                    { "GT20.status": true }
+                ]
+            },
+            {
+                $or: [
+                    { "LTE20.jobId": this.jobId },
+                    { "GT20.jobId": this.jobId }
+                ]
+            }
+        ]
+    }, {
+        $and: [
+            {
+                $or: [
+                    { "LTE20.status": false },
+                    { "GT20.status": false }
+                ]
+            },
+            {
+                $or: [
+                    { "LTE20.jobId": null },
+                    { "GT20.jobId": null }
+                ]
+            }
+        ]
+    })
+    next();
+});
 
 const Application = mongoose.model("Application", applicationSchema);
 

@@ -20,7 +20,7 @@ router.post("/company/job/add", authAdmin, companyController.add_job);
 router.post("/company/job/update", authAdmin, companyController.update_job);
 
 // delete company job
-router.post("/company/job/delete", authAdmin, companyController.delete_job);
+router.delete("/company/job/delete/:id", authAdmin, companyController.delete_job);
 
 // add company job round
 router.post("/company/job/round/add", authAdmin, companyController.job_round_add);
@@ -32,13 +32,13 @@ router.post("/company/job/round/update", authAdmin, companyController.job_round_
 router.post("/company/job/round/delete", authAdmin, companyController.job_round_delete);
 
 // declare company job round result
-router.post("/company/job/round/declare", authAdmin, companyController.job_round_result_declare);
+router.post("/company/job/round/result/declare", authAdmin, companyController.job_round_result_declare);
 
 // update company job round result
-router.post("/company/job/round/update", authAdmin, companyController.job_round_result_update);
+router.post("/company/job/round/result/update", authAdmin, companyController.job_round_result_update);
 
 // delete company job round result
-router.post("/company/job/round/delete", authAdmin, companyController.job_round_result_delete);
+router.post("/company/job/round/result/delete", authAdmin, companyController.job_round_result_delete);
 
 // post company round results
 // router.post("/company/round/result", authAdmin, companyController.rounds_result);
