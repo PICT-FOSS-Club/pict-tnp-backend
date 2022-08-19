@@ -13,7 +13,7 @@ router.post("/student/logout", authStudent, studentController.logout_student);
 // student profile
 router.get("/student/me", authStudent, studentController.student_profile);
 
-// getCurrentlyOnGoinCompaniesDrive,
+// get Currently On Going Company Jobs,
 router.get("/student/company/jobs", authStudent, studentController.drive_compaines);
 
 // company details,

@@ -42,13 +42,6 @@ const handleErrors = (err) => {
 // maxtime for which token is active
 const tokenAge = parseInt(process.env.JWT_AGE);
 
-//create token
-const createToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: tokenAge,
-  });
-};
-
 // sign up
 module.exports.signup_admin = async (req, res) => {
   const { email, password } = req.body;

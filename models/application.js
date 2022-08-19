@@ -1,23 +1,28 @@
 const mongoose = require("mongoose");
 
-const applicationSchema = new mongoose.Schema({
-    jobId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Job",
-    },
-    studentId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Student",
-    },
-    studentRoundCleared: {
-        type: Number,
-        default: 0,
-    },
-    studentResult:  {
-        type: Boolean,
-        default: true,
-    }
-});
+const applicationSchema = new mongoose.Schema(
+    {
+        jobId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Job",
+            required: true
+        },
+        studentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Student",
+            required: true
+        },
+        studentRoundCleared: {
+            type: Number,
+            default: 0,
+        },
+        studentResult:  {
+            type: Boolean,
+            default: true,
+        }
+    }, 
+    {timestamps: true}
+);
 
 // * This virtual will make relation between Application and Job
 applicationSchema.virtual('job', {
@@ -31,8 +36,8 @@ applicationSchema.virtual('job', {
 // ? Basically we get all Details of that Applied Student and all Details of this Application
 applicationSchema.virtual("student", {
     ref: "Student",
-    localField: "_id",
-    foreignField: "applicationId"
+    localField: "studentId",
+    foreignField: "_id"
 });
 
 applicationSchema.set('toObject', { virtuals: true });
