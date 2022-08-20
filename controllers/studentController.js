@@ -134,19 +134,9 @@ module.exports.student_profile = async (req, res) => {
 
 module.exports.drive_compaines = async (req, res) => {
   try {
-<<<<<<< HEAD
-    const date = new Date().toISOString();
-    // ! here dont add .exec after populate, if you do then send the response inside exec function else companyLost will be undefined, so better not to use exec function here
-    const companyList = await Company.find().populate({
-      path: "jobDescriptions",
-    });
-    console.log("company list", companyList);
-=======
-    // const date = new Date().toISOString();
     // ! here dont add .exec IN ARROWS after populate, if you do then send the response inside exec function else companyList will be undefined, so better not to use exec function here 
     const companyList = await Company.find().populate({ path: 'jobDescriptions'})
     console.log('company list', companyList)
->>>>>>> origin/main
     res.status(200).json({
       success: true,
       message: "current companies drive",
@@ -271,16 +261,12 @@ module.exports.apply_company = async (req, res) => {
     todaysDate = todaysDate.toISOString();
     let companyEndDate = job.endDate;
     let formattedCompanyEndDate = companyEndDate.toISOString();
-<<<<<<< HEAD
     console.log(
       "Todays date is:",
       todaysDate,
       " Companys end date is:",
       formattedCompanyEndDate
     );
-=======
-    // console.log("Todays date is:", todaysDate, " Companys end date is:", formattedCompanyEndDate);
->>>>>>> origin/main
 
     // *  todo : Check Date Criteria
     // ! careful with logic here

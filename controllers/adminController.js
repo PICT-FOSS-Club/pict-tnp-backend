@@ -468,45 +468,15 @@ module.exports.get_job_round_applied_students = async (req, res) => {
     });
   } catch (err) {
     res.status(400).json({
-<<<<<<< HEAD
-      success: false,
-      message: "Error while getting Applied Students",
-    });
-=======
         success: false,
         error: err,
         message: "Error while getting Applied Students",
       });
->>>>>>> origin/main
   }
 };
 
 module.exports.get_job_round_qualified_students = async (req, res) => {
   try {
-<<<<<<< HEAD
-    const studentList = await Company.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-      { $unwind: "$appliedStudents" },
-      {
-        $match: {
-          "appliedStudents.roundCleared": { $gte: parseInt(req.params.number) },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          studentId: "$appliedStudents.studentId",
-          studentName: "$appliedStudents.studentName",
-          studentEmail: "$appliedStudents.studentEmail",
-        },
-      },
-    ]);
-    res.status(200).json({ success: true, studentList });
-  } catch (err) {
-    res.status(400).json({
-      success: false,
-      message: "Error while getting Qualified Students",
-=======
     const { jobId, roundNo } = req.body;
     Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
       const studentIds = [];
@@ -528,43 +498,12 @@ module.exports.get_job_round_qualified_students = async (req, res) => {
       success: false,
       error: err,
       message: "Error while getting Disqualified Students",
->>>>>>> origin/main
     });
   }
 };
 
 module.exports.get_job_round_disqualified_students = async (req, res) => {
   try {
-<<<<<<< HEAD
-    const studentList = await Company.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-      { $unwind: "$appliedStudents" },
-      {
-        $match: {
-          $and: [
-            {
-              "appliedStudents.roundCleared": {
-                $eq: parseInt(req.params.number) - 1,
-              },
-            },
-            { "appliedStudents.studentResult": { $eq: false } },
-          ],
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          studentId: "$appliedStudents.studentId",
-          studentName: "$appliedStudents.studentName",
-          studentEmail: "$appliedStudents.studentEmail",
-        },
-      },
-    ]);
-    res.status(200).json({ success: true, studentList });
-  } catch (err) {
-    res.status(400).json({
-      success: false,
-=======
     const { jobId, roundNo } = req.body;
     Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
       const studentIds = [];
@@ -584,7 +523,6 @@ module.exports.get_job_round_disqualified_students = async (req, res) => {
     res.status(400).json({
       success: false,
       error: err,
->>>>>>> origin/main
       message: "Error while getting Disqualified Students",
     });
   }
