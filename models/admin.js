@@ -4,25 +4,28 @@ const bcrypt = require("bcrypt");
 const Joi = require("joi");
 const jwt = require("jsonwebtoken");
 
-const adminSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true, //as email needs to be unique
-    validate: [isEmail, "Please enter a valid email"],
-  },
+const adminSchema = new mongoose.Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      unique: true, //as email needs to be unique
+      validate: [isEmail, "Please enter a valid email"],
+    },
 
-  password: {
-    type: String,
-    required: true,
-    minlength: 6,
-  },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+    },
 
-  //new fields :
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  resetPasswordTokenForForgotPassword: String,
-});
+    //new fields :
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    resetPasswordTokenForForgotPassword: String,
+  }, 
+  {timestamps: true}
+);
 
 // before saving to db hashing of ppassword
 adminSchema.pre("save", async function (next) {
