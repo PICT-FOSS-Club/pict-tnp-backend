@@ -100,7 +100,7 @@ const jobSchema = new mongoose.Schema(
 );
 
 // * We can get all the jobApplications of this Job using Populate as follows:
-// ! const job = await Job.find().populate({path: 'jobApplications'});
+// ! const job = await Job.findById({ _id }).populate({path: 'jobApplications'});
 // ? Basically we get a Array with Name 'jobApplications' which contains All the Applications and all Details of this Job
 jobSchema.virtual("jobApplications", {
     ref: "Application",

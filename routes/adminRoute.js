@@ -36,7 +36,7 @@ router.post( "/admin/register/students", authAdmin, adminController.register_stu
 router.get( "/admin/company/details/:companyId", authAdmin, adminController.get_company);
 
 // get all companies
-router.get("/admin/company/all", authAdmin, adminController.get_all_companies);
+router.get("/admin/company/jobs", authAdmin, adminController.get_company_jobs);
 
 // get a student
 router.get(
@@ -56,7 +56,7 @@ router.get(
 );
 
 // get round{num} applied students for a company
-router.get("/admin/company/applied/:number/:companyId", authAdmin, adminController.get_company_round_applied_students);
+router.get("/admin/company/applied", authAdmin, adminController.get_company_round_applied_students);
 
 // get round{num} qualified students for a company
 router.get( "/admin/company/qualified/:number/:companyId", authAdmin, adminController.get_company_round_qualified_students);

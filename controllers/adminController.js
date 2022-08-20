@@ -1,5 +1,7 @@
 const Admin = require("../models/admin");
 const Student = require("../models/student");
+const Job = require("../models/job");
+const Application = require("../models/application");
 const jwt = require("jsonwebtoken");
 const Company = require("../models/company");
 const nodeMailer = require("nodemailer");
@@ -372,9 +374,14 @@ module.exports.get_company = async (req, res) => {
   }
 };
 
-module.exports.get_all_companies = async (req, res) => {
+module.exports.get_company_jobs = async (req, res) => {
   try {
-    const companyList = await Company.find();
+    const companyList = await Company.find().populate({ path: 'jobDescriptions' })
+    res.status(200).json({
+      success: true,
+      message: "current companies drive",
+      data: companyList,
+    });
     return res
       .status(200)
       .json({ success: true, message: "Company List", data: companyList });
@@ -442,26 +449,14 @@ module.exports.get_dashboard_details = async (req, res) => {
 
 module.exports.get_company_round_applied_students = async (req, res) => {
   try {
-    const studentList = await Company.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-      { $unwind: "$appliedStudents" },
-      {
-        $match: {
-          "appliedStudents.roundCleared": {
-            $gte: parseInt(req.params.number) - 1,
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          studentId: "$appliedStudents.studentId",
-          studentName: "$appliedStudents.studentName",
-          studentEmail: "$appliedStudents.studentEmail",
-        },
-      },
-    ]);
-    res.status(200).json({ success: true, studentList });
+    const { jobId, roundNo } = req.body;
+    const job = await Job.findById(jobId).populate({path: 'jobApplications'});
+    const data = job.jobApplications[0];
+    console.log(data._id);
+    const application = Application.findById(data._id).populate({ path: 'student' });
+    // const data = await Job.findById(jobId).populate({path: 'jobApplications'}).where({ "$.jobApplications.studentRoundCleared": { $gte: roundNo-1}});
+    console.log(application)
+    res.status(200).json({ success: true, application });
   } catch (err) {
     res
       .status(400)
