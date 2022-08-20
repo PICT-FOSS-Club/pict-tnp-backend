@@ -117,8 +117,22 @@ jobSchema.pre("remove", async function(next){
     // console.log('this',this);
     // this.model("Application")/remove({ _id: this._id }, next);
 
-
+    try {        
+        const applications = await Application.find({
+            jobId: this._id
+        })
     
+        if(!applications){
+            console.log('err in job pre in finding application')
+        }
+    
+        // applications.remove();
+        for(const application of applications){
+            await application.remove();
+        }
+    } catch (err) {
+        console.log('err in job pre',err)
+    }
     // await Application.deleteMany({
     //     jobId: this._id
     // });

@@ -39,16 +39,11 @@ companySchema.set('toJSON', { virtuals: true });
 
 companySchema.pre("remove", async function (next) {
   console.log('this', this);
-  // this.model("Application")/remove({ _id: this._id }, next);
-  // await Job.deleteMany({
-  //   companyId: this._id
-  // }).exec(async function (err, success) {
-  //   if (err) { console.log(err); }
-  //   await Application;
+  const jobList = await Job.find({companyId: this._id});
 
-  // })
-  const myJobsArray = await Job.populate
-  await Job.deleteMany();
+  for(const job of jobList) {
+    await job.remove();
+  }
   next();
 });
 

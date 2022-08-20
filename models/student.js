@@ -401,9 +401,6 @@ module.exports.validate = (student) => {
     AmcatScore: Joi.number(),
     password: Joi.string().required().min(7),
 
-    isLTE20: Joi.boolean(),
-    isGT20: Joi.boolean(),
-
     //new validations:
     attendance: Joi.number(),
     yearGap: Joi.number(),

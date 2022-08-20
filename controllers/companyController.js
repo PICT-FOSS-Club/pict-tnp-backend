@@ -122,8 +122,9 @@ module.exports.delete_job = async (req, res) => {
     const jobId = req.params.id;
     console.log('jobId', jobId);
     const job = await Job.findById(jobId);
-    await
-      console.log('job', job);
+    // todo - delete job
+      await job.remove();
+      // console.log('job', job);
     if (!job) {
       return res.status(404).json({
         success: false,
@@ -173,11 +174,15 @@ module.exports.job_round_result_declare = async (req, res) => {
     }
     job.currentRound = roundNo;
     // Updating the Qualified Students
-    await Application.updateMany({ jobId: jobId , studentId: { $in: qaulifiedStudentIds } }, { studentRoundCleared: roundNo });
+    if(qaulifiedStudentIds.length){
+      await Application.updateMany({ jobId: jobId , studentId: { $in: qaulifiedStudentIds } }, { studentRoundCleared: roundNo });
+    }
     // Updating the DisQualified Students
-    await Application.updateMany({ jobId: jobId, studentId: { $in: disqualifiedStudentIds } }, { studentResult: false })
+    if(disqualifiedStudentIds.length){
+      await Application.updateMany({ jobId: jobId, studentId: { $in: disqualifiedStudentIds } }, { studentResult: false })
+    }
     if(job.totalRounds === roundNo){
-      (job.ctc > 20) ? (await Student.updateMany({ _id: { $in: qaulifiedStudentIds } }, { "GT20.status": true, "GT20.jobId": jobId })) : (await Student.updateMany({_id: { $in: qaulifiedStudentIds } }, { "LTE20.status": true, "LTE20.jobId": jobId }));
+      (job.ctc > 20) ? (await Student.updateMany({ _id: { $in: qaulifiedStudentIds } }, { "GT20.status": true, "GT20.jobId": jobId })) : (await Student.updateMany({_id: { $in: qaulifiedStudentIds } }, { "LTE20.status": true , "LTE20.jobId": jobId }));
       job.jobResult = true;
     }
     job.save();

@@ -10,6 +10,8 @@ const multer = require("multer");
 const fs = require("fs-extra");
 const path = require("path");
 const mongoose = require("mongoose");
+const Job = require("../models/job");
+const Application = require("../models/application");
 
 // handle error
 const handleErrors = (err) => {
@@ -414,11 +416,13 @@ module.exports.get_all_students = async (req, res) => {
 module.exports.get_dashboard_details = async (req, res) => {
   try {
     const companyList = await Company.find();
+    const jobList = await Job.find();
+    console.log('joblist',jobList);
     const dashboard_details = {
       totalStudents: (await Student.find()).length,
       placedStudents: (
         await Student.find({
-          $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }],
+          $or: [{ "LTE20.status": { $eq: true } }, { "GT20.status": { $eq: true } }],
         })
       ).length,
       unplacedStudents: 0,
@@ -430,9 +434,14 @@ module.exports.get_dashboard_details = async (req, res) => {
       dashboard_details.totalStudents - dashboard_details.placedStudents;
 
     let sumOfCTC = 0;
-    for (const company of companyList) {
-      sumOfCTC += company.ctc;
+    // * do not use parseInt here as it will give only integer values not decimal values
+    // for (const company of companyList) {
+    //   sumOfCTC += company.ctc;
+    // }
+    for(const job of jobList){
+      sumOfCTC += job.ctc;
     }
+    console.log('sumOfCTC: ', sumOfCTC);
     dashboard_details.averageCTC = sumOfCTC / companyList.length;
     res.status(200).json({ success: true, dashboard_details });
   } catch (err) {
@@ -442,25 +451,26 @@ module.exports.get_dashboard_details = async (req, res) => {
 
 module.exports.get_company_round_applied_students = async (req, res) => {
   try {
-    const studentList = await Company.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-      { $unwind: "$appliedStudents" },
-      {
-        $match: {
-          "appliedStudents.roundCleared": {
-            $gte: parseInt(req.params.number) - 1,
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          studentId: "$appliedStudents.studentId",
-          studentName: "$appliedStudents.studentName",
-          studentEmail: "$appliedStudents.studentEmail",
-        },
-      },
-    ]);
+    // const studentList = await Company.aggregate([
+    //   { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
+    //   { $unwind: "$appliedStudents" },
+    //   {
+    //     $match: {
+    //       "appliedStudents.roundCleared": {
+    //         $gte: parseInt(req.params.number) - 1,
+    //       },
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       studentId: "$appliedStudents.studentId",
+    //       studentName: "$appliedStudents.studentName",
+    //       studentEmail: "$appliedStudents.studentEmail",
+    //     },
+    //   },
+    // ]);
+    const studentList = await Application.find({jobId: req.params.jobId})
     res.status(200).json({ success: true, studentList });
   } catch (err) {
     res
@@ -473,70 +483,77 @@ module.exports.get_company_round_applied_students = async (req, res) => {
 };
 
 module.exports.get_company_round_qualified_students = async (req, res) => {
-  try {
-    const studentList = await Company.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-      { $unwind: "$appliedStudents" },
-      {
-        $match: {
-          "appliedStudents.roundCleared": { $gte: parseInt(req.params.number) },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          studentId: "$appliedStudents.studentId",
-          studentName: "$appliedStudents.studentName",
-          studentEmail: "$appliedStudents.studentEmail",
-        },
-      },
-    ]);
-    res.status(200).json({ success: true, studentList });
-  } catch (err) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Error while getting Qualified Students",
-      });
-  }
+  // try {
+    // const studentList = await Company.aggregate([
+    //   { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
+    //   { $unwind: "$appliedStudents" },
+    //   {
+    //     $match: {
+    //       "appliedStudents.roundCleared": { $gte: parseInt(req.params.number) },
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       studentId: "$appliedStudents.studentId",
+    //       studentName: "$appliedStudents.studentName",
+    //       studentEmail: "$appliedStudents.studentEmail",
+    //     },
+    //   },
+    // ]);
+
+  // } catch (err) {
+  //   res
+  //     .status(400)
+  //     .json({
+  //       success: false,
+  //       message: "Error while getting Qualified Students",
+  //     });
+  // }
 };
 
 module.exports.get_company_round_disqualified_students = async (req, res) => {
-  try {
-    const studentList = await Company.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-      { $unwind: "$appliedStudents" },
-      {
-        $match: {
-          $and: [
-            {
-              "appliedStudents.roundCleared": {
-                $eq: parseInt(req.params.number) - 1,
-              },
-            },
-            { "appliedStudents.studentResult": { $eq: false } },
-          ],
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          studentId: "$appliedStudents.studentId",
-          studentName: "$appliedStudents.studentName",
-          studentEmail: "$appliedStudents.studentEmail",
-        },
-      },
-    ]);
-    res.status(200).json({ success: true, studentList });
-  } catch (err) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Error while getting Disqualified Students",
-      });
-  }
+  // try {
+    // const studentList = await Company.aggregate([
+    //   { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
+    //   { $unwind: "$appliedStudents" },
+    //   {
+    //     $match: {
+    //       $and: [
+    //         {
+    //           "appliedStudents.roundCleared": {
+    //             $eq: parseInt(req.params.number) - 1,
+    //           },
+    //         },
+    //         { "appliedStudents.studentResult": { $eq: false } },
+    //       ],
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       studentId: "$appliedStudents.studentId",
+    //       studentName: "$appliedStudents.studentName",
+    //       studentEmail: "$appliedStudents.studentEmail",
+    //     },
+    //   },
+    // ]);
+    // const studentList = await Application.find({
+    //   $and:[
+    //     {jobId: req.params.jobId},
+    //     {studentResult: false},
+    //     {studentRoundCleared:  {$eq: parseInt(req.params.number) - 1}}
+    //   ]
+    // })
+    // res.status(200).json({ success: true, studentList });
+  // } catch (err) {
+  //   res
+  //     .status(400)
+  //     .json({
+  //       success: false,
+  //       message: "Error while getting Disqualified Students",
+  //     });
+  // }
 };
 
 //
@@ -561,7 +578,7 @@ module.exports.get_placed_students = async (req, res) => {
   // }
 
   let students = await Student.find({
-    $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }],
+    $or: [{ "LTE20.status": { $eq: true } }, { "GT20.status": { $eq: true } }],
   });
 
   if (!students) {
@@ -581,5 +598,33 @@ module.exports.generate_report = async (req, res) => {
     
   } catch (err) {
     console.log(err)
+  }
+}
+
+module.exports.student_application_delete = async (req, res) => {
+  try {
+    const applicationId = req.params.applicationId;
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found"
+      })
+    }
+
+    await application.remove();
+
+    res.status(200).json({
+      success: true,
+      message: "Application Deleted Successfully.",
+    });
+    
+  } catch (err) {
+    console.log('err in outermost try catch',err)
+    res.status(400).json({
+      success: false,
+      message: "Error while Deleting Application.",
+    });
   }
 }

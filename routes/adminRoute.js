@@ -56,18 +56,24 @@ router.get(
 );
 
 // get round{num} applied students for a company
-router.get("/admin/company/applied/:number/:companyId", authAdmin, adminController.get_company_round_applied_students);
+// router.get("/admin/company/applied/:number/:companyId", authAdmin, adminController.get_company_round_applied_students);
+router.get("/admin/company/applied/:number/:jobId", authAdmin, adminController.get_company_round_applied_students);
 
 // get round{num} qualified students for a company
-router.get( "/admin/company/qualified/:number/:companyId", authAdmin, adminController.get_company_round_qualified_students);
+// router.get( "/admin/company/qualified/:number/:companyId", authAdmin, adminController.get_company_round_qualified_students);
+router.get( "/admin/company/qualified/:number/:jobId", authAdmin, adminController.get_company_round_qualified_students);
 
 // get round{num} disqualified students for a company
-router.get( "/admin/company/disqualified/:number/:companyId", authAdmin, adminController.get_company_round_disqualified_students);
+// router.get( "/admin/company/disqualified/:number/:companyId", authAdmin, adminController.get_company_round_disqualified_students);
+router.get( "/admin/company/disqualified/:number/:jobId", authAdmin, adminController.get_company_round_disqualified_students);
 
 // Get Placed students list,excel:
 router.get("/admin/student/placed", authAdmin, adminController.get_placed_students);
 
 // Report Generation
 router.get("/admin/student/report/generate", authAdmin, adminController.generate_report);
+
+// delete application of a student
+router.delete("/admin/student/application/delete/:applicationId", authAdmin, adminController.student_application_delete);
 
 module.exports = router;

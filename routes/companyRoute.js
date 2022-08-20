@@ -11,7 +11,7 @@ router.post("/company/add", authAdmin, companyController.add_company);
 router.post("/company/update", authAdmin, companyController.update_company);
 
 // delete company
-router.delete("/company/delete", authAdmin, companyController.delete_company);
+router.post("/company/delete", authAdmin, companyController.delete_company);
 
 // add company job
 router.post("/company/job/add", authAdmin, companyController.add_job);
