@@ -174,8 +174,18 @@ module.exports.apply_company = async (req, res) => {
     // * 8. CGPA criteria - DONE
 
     let canApply = true;
+    const whyNotEligible = [
+      {branch: true},
+      {courseName: true},
+      {gender: true},
+      {sscPercentage: true},
+      {endDate: true},
+      {AmcatScore: true},
+      {aggrCgpa: true},
+    ]
 
     // * branch checking
+    // const jobCriteria = job.criteria;
 
     let applicableBranchArray = [];
     const csApplicable = job.criteria.branch.cs;
@@ -188,6 +198,7 @@ module.exports.apply_company = async (req, res) => {
     // console.table(applicableBranchArray);
 
     if (!applicableBranchArray.includes(student.branch)) {
+      whyNotEligible[0]={branch:false}
       canApply = false;
     }
     // console.log("canapply after branch cheking", canApply);
@@ -196,6 +207,7 @@ module.exports.apply_company = async (req, res) => {
     const companyCriteriaCourse = job.criteria.courseName.ug;
 
     if (companyCriteriaCourse !== student.isUg) {
+      whyNotEligible[1]={courseName:false}
       canApply = false;
     }
     // console.log("canapply after course cheking", canApply);
@@ -211,10 +223,12 @@ module.exports.apply_company = async (req, res) => {
     if (!bothApplicable) {
       if (studentGender == "female") {
         if (!femaleApplicable) {
+          whyNotEligible[2]={gender:false}
           canApply = false;
         }
       } else if (studentGender == "male") {
         if (!maleApplicable) {
+          whyNotEligible[2]={gender:false}
           canApply = false;
         }
       }
@@ -226,13 +240,8 @@ module.exports.apply_company = async (req, res) => {
     const studentSscPercentage = student.sscPercentage;
 
     if (studentSscPercentage < job.criteria.sscPercentage) {
-      console.log(
-        "ssc per:",
-        studentSscPercentage,
-        " , company requirement",
-        job.criteria.sscPercentage
-      );
-      canApply = false;
+          whyNotEligible[3]={sscPercentage:false}
+          canApply = false;
     }
     // console.log("canapply after ssc cheking", canApply);
 
@@ -258,14 +267,16 @@ module.exports.apply_company = async (req, res) => {
     // *  todo : Check Date Criteria
     // ! careful with logic here
     if (formattedCompanyEndDate < todaysDate) {
-      canApply = false;
+          whyNotEligible[4]={endDate:false}
+          canApply = false;
     }
     // console.log("canApply after end-date checking:", canApply);
 
     // * checking amcat Criteria
     // ! note requiredAmcatScore is in job where RequiredAmcatScore was in company
     if (job.criteria.requiredAmcatScore > student.AmcatScore) {
-      canApply = false;
+          whyNotEligible[5]={AmcatScore:false}
+          canApply = false;
     }
     // console.log("canApply after AMCAT checking:", canApply);
 
@@ -276,7 +287,8 @@ module.exports.apply_company = async (req, res) => {
     // console.log("canApply after attendance checking:", canApply);
 
     if (job.criteria.engCgpa > student.aggrCgpa) {
-      canApply = false;
+          whyNotEligible[6]={aggrCgpa:false}
+          canApply = false;
     }
     // console.log("canApply after aggr.CGPA checking:", canApply);
 
@@ -290,7 +302,7 @@ module.exports.apply_company = async (req, res) => {
     } else {
       return res
         .status(403)
-        .json({ success: false, message: "You can not apply for this company." })
+        .json({ success: false, error: whyNotEligible })
     }
   }
   catch (err) {
