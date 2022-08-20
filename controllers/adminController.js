@@ -1,7 +1,5 @@
 const Admin = require("../models/admin");
 const Student = require("../models/student");
-const Job = require("../models/job");
-const Application = require("../models/application");
 const jwt = require("jsonwebtoken");
 const Company = require("../models/company");
 const nodeMailer = require("nodemailer");
@@ -12,6 +10,8 @@ const multer = require("multer");
 const fs = require("fs-extra");
 const path = require("path");
 const mongoose = require("mongoose");
+const Job = require("../models/job");
+const Application = require("../models/application");
 
 // handle error
 const handleErrors = (err) => {
@@ -382,11 +382,8 @@ module.exports.get_company_jobs = async (req, res) => {
       message: "current companies drive",
       data: companyList,
     });
-    return res
-      .status(200)
-      .json({ success: true, message: "Company List", data: companyList });
   } catch (err) {
-    res.status(400).json({ errors: err, success: false });
+    res.status(400).json({ success: false, error: err, message: "Error while getting the company jobs" });
   }
 };
 
@@ -421,11 +418,13 @@ module.exports.get_all_students = async (req, res) => {
 module.exports.get_dashboard_details = async (req, res) => {
   try {
     const companyList = await Company.find();
+    const jobList = await Job.find();
+    console.log('joblist',jobList);
     const dashboard_details = {
       totalStudents: (await Student.find()).length,
       placedStudents: (
         await Student.find({
-          $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }],
+          $or: [{ "LTE20.status": { $eq: true } }, { "GT20.status": { $eq: true } }],
         })
       ).length,
       unplacedStudents: 0,
@@ -437,9 +436,14 @@ module.exports.get_dashboard_details = async (req, res) => {
       dashboard_details.totalStudents - dashboard_details.placedStudents;
 
     let sumOfCTC = 0;
-    for (const company of companyList) {
-      sumOfCTC += company.ctc;
+    // * do not use parseInt here as it will give only integer values not decimal values
+    // for (const company of companyList) {
+    //   sumOfCTC += company.ctc;
+    // }
+    for(const job of jobList){
+      sumOfCTC += job.ctc;
     }
+    console.log('sumOfCTC: ', sumOfCTC);
     dashboard_details.averageCTC = sumOfCTC / companyList.length;
     res.status(200).json({ success: true, dashboard_details });
   } catch (err) {
@@ -447,95 +451,87 @@ module.exports.get_dashboard_details = async (req, res) => {
   }
 };
 
-module.exports.get_company_round_applied_students = async (req, res) => {
+module.exports.get_job_round_applied_students = async (req, res) => {
   try {
     const { jobId, roundNo } = req.body;
-    const job = await Job.findById(jobId).populate({path: 'jobApplications'});
-    const data = job.jobApplications[0];
-    console.log(data._id);
-    const application = Application.findById(data._id).populate({ path: 'student' });
-    // const data = await Job.findById(jobId).populate({path: 'jobApplications'}).where({ "$.jobApplications.studentRoundCleared": { $gte: roundNo-1}});
-    console.log(application)
-    res.status(200).json({ success: true, application });
+    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
+      const studentIds = [];
+      job.jobApplications.map(application => { 
+        if(application.studentRoundCleared >= roundNo-1) {
+          studentIds.push(application.studentId);
+        } 
+      });
+      const data = await Student.find({ _id: {$in: studentIds }});
+      res.status(200).json({ 
+        success: true, 
+        data, 
+        message: `Applied Students of Round ${roundNo}.`
+      });
+    });
   } catch (err) {
-    res
-      .status(400)
-      .json({
+    res.status(400).json({
         success: false,
+        error: err,
         message: "Error while getting Applied Students",
       });
   }
 };
 
-module.exports.get_company_round_qualified_students = async (req, res) => {
+module.exports.get_job_round_qualified_students = async (req, res) => {
   try {
-    const studentList = await Company.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-      { $unwind: "$appliedStudents" },
-      {
-        $match: {
-          "appliedStudents.roundCleared": { $gte: parseInt(req.params.number) },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          studentId: "$appliedStudents.studentId",
-          studentName: "$appliedStudents.studentName",
-          studentEmail: "$appliedStudents.studentEmail",
-        },
-      },
-    ]);
-    res.status(200).json({ success: true, studentList });
-  } catch (err) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Error while getting Qualified Students",
+    const { jobId, roundNo } = req.body;
+    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
+      const studentIds = [];
+      job.jobApplications.map(application => { 
+        if(application.studentRoundCleared >= roundNo) {
+          studentIds.push(application.studentId);
+        } 
       });
+      const data = await Student.find({ _id: {$in: studentIds }});
+      res.status(200).json({ 
+        success: true, 
+        data, 
+        message: `Qualified Students of Round ${roundNo}.`
+      });
+    });
+  } 
+  catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while getting Disqualified Students",
+    });
   }
 };
 
-module.exports.get_company_round_disqualified_students = async (req, res) => {
+module.exports.get_job_round_disqualified_students = async (req, res) => {
   try {
-    const studentList = await Company.aggregate([
-      { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-      { $unwind: "$appliedStudents" },
-      {
-        $match: {
-          $and: [
-            {
-              "appliedStudents.roundCleared": {
-                $eq: parseInt(req.params.number) - 1,
-              },
-            },
-            { "appliedStudents.studentResult": { $eq: false } },
-          ],
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          studentId: "$appliedStudents.studentId",
-          studentName: "$appliedStudents.studentName",
-          studentEmail: "$appliedStudents.studentEmail",
-        },
-      },
-    ]);
-    res.status(200).json({ success: true, studentList });
-  } catch (err) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Error while getting Disqualified Students",
+    const { jobId, roundNo } = req.body;
+    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
+      const studentIds = [];
+      job.jobApplications.map(application => { 
+        if((application.studentRoundCleared == roundNo-1) && (application.studentResult == false)) {
+          studentIds.push(application.studentId);
+        } 
       });
+      const data = await Student.find({ _id: {$in: studentIds }});
+      res.status(200).json({ 
+        success: true, 
+        data, 
+        message: `Disqualified Students of Round ${roundNo}.` 
+      });
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while getting Disqualified Students",
+    });
   }
 };
 
 //
-//Generate Placement Report:
+//Generate placed student Report list,excel:
 
 module.exports.get_placed_students = async (req, res) => {
   // const dept = req.query.Dept;
@@ -556,7 +552,7 @@ module.exports.get_placed_students = async (req, res) => {
   // }
 
   let students = await Student.find({
-    $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }],
+    $or: [{ "LTE20.status": { $eq: true } }, { "GT20.status": { $eq: true } }],
   });
 
   if (!students) {
@@ -569,3 +565,40 @@ module.exports.get_placed_students = async (req, res) => {
     .status(200)
     .json({ success: true, message: "List of students", data: students });
 };
+
+// generate report
+module.exports.generate_report = async (req, res) => {
+  try {
+    
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+module.exports.student_application_delete = async (req, res) => {
+  try {
+    const applicationId = req.params.applicationId;
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found"
+      })
+    }
+
+    await application.remove();
+
+    res.status(200).json({
+      success: true,
+      message: "Application Deleted Successfully.",
+    });
+    
+  } catch (err) {
+    console.log('err in outermost try catch',err)
+    res.status(400).json({
+      success: false,
+      message: "Error while Deleting Application.",
+    });
+  }
+}

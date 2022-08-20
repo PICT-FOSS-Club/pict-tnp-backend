@@ -79,7 +79,9 @@ module.exports.login_student = async (req, res) => {
   try {
     let token;
     // const student = await Student.login(email, password);
-    const student = await Student.findOne({ email: email }).populate({path: 'applications'});
+    const student = await Student.findOne({ email: email }).populate({
+      path: "applications",
+    });
     if (student) {
       const isMatch = await bcrypt.compare(password, student.password);
       // token = createToken(student._id);
@@ -115,7 +117,9 @@ module.exports.logout_student = (req, res) => {
 // student profile
 module.exports.student_profile = async (req, res) => {
   try {
-    const student = await Student.findById(req.student._id).populate({path: 'applications'});
+    const student = await Student.findById(req.student._id).populate({
+      path: "applications",
+    });
     res.status(200).json({ student, success: true });
   } catch {
     res.status(400).json({ success: false, message: "Login or Signup" });
@@ -124,10 +128,12 @@ module.exports.student_profile = async (req, res) => {
 
 module.exports.drive_compaines = async (req, res) => {
   try {
-    const date = new Date().toISOString();
-    // ! here dont add .exec after populate, if you do then send the response inside exec function else companyLost will be undefined, so better not to use exec function here 
-    const companyList = await Company.find().populate({ path: 'jobDescriptions' })
-    console.log('company list', companyList)
+    // const date = new Date().toISOString();
+    // ! here dont add .exec IN ARROWS after populate, if you do then send the response inside exec function else companyList will be undefined, so better not to use exec function here
+    const companyList = await Company.find().populate({
+      path: "jobDescriptions",
+    });
+    console.log("company list", companyList);
     res.status(200).json({
       success: true,
       message: "current companies drive",
@@ -144,31 +150,28 @@ module.exports.apply_company = async (req, res) => {
   try {
     const job = await Job.findById(req.body.jobId);
     if (!job) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Job not found" });
+      return res.status(403).json({ success: false, message: "Job not found" });
     }
 
     const student = await Student.findById(req.student._id);
 
     const studentAlreadyApplied = await Application.findOne({
-      $and:[
-        {studentId: req.student._id},
-        {jobId: req.body.jobId}
-      ]
-    })
+      $and: [{ studentId: req.student._id }, { jobId: req.body.jobId }],
+    });
 
-    if(studentAlreadyApplied){
-      return res.status(403).json({success:false, message:"Student already applied"})    
+    if (studentAlreadyApplied) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Student already applied" });
     }
 
     // todo: checking eligible before making student's application
-    // * Criteria order 
+    // * Criteria order
     // * 1. check branch - DONE
     // * 2. Course - ug/pg - DONE
     // * 3. Gender - DONE
     // ! 4. HSC & SSC percentage - SSC DONE, HSC REMAINS
-    // ! 5. End date (last date of application) Criteria - DONE WITH BACKEND, CHECK WITH FRONTEND 
+    // ! 5. End date (last date of application) Criteria - DONE WITH BACKEND, CHECK WITH FRONTEND
     // * 6. Amcat criteria - DONE
     // * 7. Attendance Criteria - DONE
     // * 8. CGPA criteria - DONE
@@ -190,7 +193,7 @@ module.exports.apply_company = async (req, res) => {
     if (!applicableBranchArray.includes(student.branch)) {
       canApply = false;
     }
-    console.log("canapply after branch cheking", canApply);
+    // console.log("canapply after branch cheking", canApply);
 
     // * checking course
     const companyCriteriaCourse = job.criteria.courseName.ug;
@@ -198,7 +201,7 @@ module.exports.apply_company = async (req, res) => {
     if (companyCriteriaCourse !== student.isUg) {
       canApply = false;
     }
-    console.log("canapply after course cheking", canApply);
+    // console.log("canapply after course cheking", canApply);
 
     // * Gender criteria checking
     const studentGender = student.gender;
@@ -206,7 +209,7 @@ module.exports.apply_company = async (req, res) => {
     const femaleApplicable = job.criteria.gender.female;
     const bothApplicable = job.criteria.gender.both;
 
-    console.table(job.criteria.gender);
+    // console.table(job.criteria.gender);
 
     if (!bothApplicable) {
       if (studentGender == "female") {
@@ -219,7 +222,7 @@ module.exports.apply_company = async (req, res) => {
         }
       }
     }
-    console.log("canapply after gender cheking", canApply);
+    // console.log("canapply after gender cheking", canApply);
 
     // * checking SSC percentage
     // ! HSC % checking remains as WDKT student has done hsc or diploma and company criteria are
@@ -234,7 +237,7 @@ module.exports.apply_company = async (req, res) => {
       );
       canApply = false;
     }
-    console.log("canapply after ssc cheking", canApply);
+    // console.log("canapply after ssc cheking", canApply);
 
     // * checking End date (last date of application) Criteria
     var today = new Date();
@@ -246,28 +249,30 @@ module.exports.apply_company = async (req, res) => {
     //   today.getDate();
 
     // ! Note -  new Date(kolkata....).... will give date-time in dd/mm/yyyy ss:mm:hh format
-    // ! so to convert it into mongoose format for checking create another function new DatetodaysDate) which will give mongoose format YYYY-MM-DDTHH:MM:SS.SSSZ 
-    var todaysDate = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+    // ! so to convert it into mongoose format for checking create another function new DatetodaysDate) which will give mongoose format YYYY-MM-DDTHH:MM:SS.SSSZ
+    var todaysDate = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
     todaysDate = new Date(todaysDate);
     // * above todaysDate is in object type, convert it into ISOStrig type not string(thurs 21 august 2022) type
     todaysDate = todaysDate.toISOString();
     let companyEndDate = job.endDate;
     let formattedCompanyEndDate = companyEndDate.toISOString();
-    console.log("Todays date is:", todaysDate, " Companys end date is:", formattedCompanyEndDate);
+    // console.log("Todays date is:", todaysDate, " Companys end date is:", formattedCompanyEndDate);
 
     // *  todo : Check Date Criteria
     // ! careful with logic here
     if (formattedCompanyEndDate < todaysDate) {
       canApply = false;
     }
-    console.log("canApply after end-date checking:", canApply);
+    // console.log("canApply after end-date checking:", canApply);
 
     // * checking amcat Criteria
     // ! note requiredAmcatScore is in job where RequiredAmcatScore was in company
     if (job.criteria.requiredAmcatScore > student.AmcatScore) {
       canApply = false;
     }
-    console.log("canApply after AMCAT checking:", canApply);
+    // console.log("canApply after AMCAT checking:", canApply);
 
     // ! note requiredAttendance is in job where RequiredAttendance was in company
     // if (job.criteria.requiredAttendance > student.attendance) {
@@ -278,29 +283,31 @@ module.exports.apply_company = async (req, res) => {
     if (job.criteria.engCgpa > student.aggrCgpa) {
       canApply = false;
     }
-    console.log("canApply after aggr.CGPA checking:", canApply);
+    // console.log("canApply after aggr.CGPA checking:", canApply);
 
     if (canApply) {
-      const application = await Application.create({ jobId: req.body.jobId, studentId: req.student._id });
+      const application = await Application.create({
+        jobId: req.body.jobId,
+        studentId: req.student._id,
+      });
       // student.applications.push({ applicationId: application._id });
       await student.save();
       return res
         .status(201)
-        .json({ success: true, message: "Application created successfully." })
+        .json({ success: true, message: "Application created successfully." });
     } else {
-      return res
-        .status(403)
-        .json({ success: false, message: "You can not apply for this company." })
+      return res.status(403).json({
+        success: false,
+        message: "You can not apply for this company.",
+      });
     }
-  }
-  catch (err) {
+  } catch (err) {
     console.log(err);
     res
       .status(400)
       .json({ success: false, message: "Error while get company list" });
   }
-}
-
+};
 
 // student reset Password
 module.exports.student_reset_password = async (req, res) => {
@@ -350,47 +357,47 @@ module.exports.student_reset_password = async (req, res) => {
 };
 
 module.exports.student_forgot_password = async (req, res) => {
-  const student = await Student.findOne({ email: req.body.email });
-
-  if (!student) {
-    return res.status(404).send("student not found");
-  }
-
-  // generating token
-  const resetToken = crypto.randomBytes(32).toString("hex");
-
-  //generates salt
-  const salt = await bcrypt.genSalt(8);
-
-  const resetPasswordToken = await bcrypt.hash(resetToken, salt);
-
-  //storing HASHED password in student db, not token
-  student.resetPasswordToken = resetPasswordToken;
-
-  student.resetPasswordExpire = Date.now() + 15 * 60 * 1000; //15 minutes from now
-
-  await student.save({ validateBeforeSave: false });
-  // console.log('student after saving', student);
-  // console.log("resetToken", resetToken);
-  // now send email
-  // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/resetPassword?token=${resetToken}&id=${user._id}`;
-  const resetPasswordUrl = `http://localhost:3000/student/password/reset/${resetToken}/${student.id}`;
-
-  // const message = `Your reset password token is:- \n\n <form action=${resetPasswordUrl} method="post">
-  //     <input type="text" name="newPassword2" placeholder="Enter New password" />
-  // <button type="submit">Click</button></form> \n\n If you have not requested this mail then please contact PICT TnP cell`;
-
-  const message = `Your reset password token is:- \n\n <a href=${resetPasswordUrl}>click here</a> \n\n If you have not reque`;
-
-  const transporter = nodeMailer.createTransport({
-    service: process.env.SMTP_SERVICE,
-    auth: {
-      user: process.env.SMTP_MAIL,
-      pass: process.env.SMTP_PASSWORD,
-    },
-  });
-
   try {
+    const student = await Student.findOne({ email: req.body.email });
+
+    if (!student) {
+      return res.status(404).send("student not found");
+    }
+
+    // generating token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    //generates salt
+    const salt = await bcrypt.genSalt(8);
+
+    const resetPasswordToken = await bcrypt.hash(resetToken, salt);
+
+    //storing HASHED password in student db, not token
+    student.resetPasswordToken = resetPasswordToken;
+
+    student.resetPasswordExpire = Date.now() + 15 * 60 * 1000; //15 minutes from now
+
+    await student.save({ validateBeforeSave: false });
+    // console.log('student after saving', student);
+    // console.log("resetToken", resetToken);
+    // now send email
+    // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/resetPassword?token=${resetToken}&id=${user._id}`;
+    const resetPasswordUrl = `http://localhost:3000/student/password/reset/${resetToken}/${student.id}`;
+
+    // const message = `Your reset password token is:- \n\n <form action=${resetPasswordUrl} method="post">
+    //     <input type="text" name="newPassword2" placeholder="Enter New password" />
+    // <button type="submit">Click</button></form> \n\n If you have not requested this mail then please contact PICT TnP cell`;
+
+    const message = `Your reset password token is:- \n\n <a href=${resetPasswordUrl}>click here</a> \n\n If you have not reque`;
+
+    const transporter = nodeMailer.createTransport({
+      service: process.env.SMTP_SERVICE,
+      auth: {
+        user: process.env.SMTP_MAIL,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
     let info = await transporter.sendMail(
       {
         from: process.env.SMTP_SERVICE,
