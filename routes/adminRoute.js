@@ -55,14 +55,14 @@ router.get(
   adminController.get_dashboard_details
 );
 
-// get round{num} applied students for a company
-router.get("/admin/company/applied", authAdmin, adminController.get_company_round_applied_students);
+// get Applied Students of a Job for Particular Round
+router.get("/admin/company/applied", authAdmin, adminController.get_job_round_applied_students);
 
-// get round{num} qualified students for a company
-router.get( "/admin/company/qualified/:number/:companyId", authAdmin, adminController.get_company_round_qualified_students);
+// get qualified students for a round of a  job
+router.get( "/admin/company/qualified", authAdmin, adminController.get_job_round_qualified_students);
 
-// get round{num} disqualified students for a company
-router.get( "/admin/company/disqualified/:number/:companyId", authAdmin, adminController.get_company_round_disqualified_students);
+// get disqualified students for a round of a  job
+router.get( "/admin/company/disqualified", authAdmin, adminController.get_job_round_disqualified_students);
 
 //Generate Placement Report List:
 router.get("/admin/student/placed", authAdmin, adminController.get_placed_students);
