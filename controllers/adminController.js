@@ -4,11 +4,7 @@ const jwt = require("jsonwebtoken");
 const Company = require("../models/company");
 const nodeMailer = require("nodemailer");
 const bcrypt = require("bcrypt");
-const File = require("../models/file");
 const crypto = require("crypto");
-const multer = require("multer");
-const fs = require("fs-extra");
-const path = require("path");
 const mongoose = require("mongoose");
 const Job = require("../models/job");
 const Application = require("../models/application");
@@ -56,7 +52,9 @@ module.exports.signup_admin = async (req, res) => {
       maxAge: tokenAge * 1000,
       expires: new Date(Date.now() + 2483000000),
     }); //30 days
-    res.status(201).json({ admin: admin._id, usertype: "admin", token, success: true });
+    res
+      .status(201)
+      .json({ admin: admin._id, usertype: "admin", token, success: true });
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors, success: false });
@@ -376,14 +374,20 @@ module.exports.get_company = async (req, res) => {
 
 module.exports.get_company_jobs = async (req, res) => {
   try {
-    const companyList = await Company.find().populate({ path: 'jobDescriptions' })
+    const companyList = await Company.find().populate({
+      path: "jobDescriptions",
+    });
     res.status(200).json({
       success: true,
       message: "current companies drive",
       data: companyList,
     });
   } catch (err) {
-    res.status(400).json({ success: false, error: err, message: "Error while getting the company jobs" });
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while getting the company jobs",
+    });
   }
 };
 
@@ -419,12 +423,15 @@ module.exports.get_dashboard_details = async (req, res) => {
   try {
     const companyList = await Company.find();
     const jobList = await Job.find();
-    console.log('joblist',jobList);
+    console.log("joblist", jobList);
     const dashboard_details = {
       totalStudents: (await Student.find()).length,
       placedStudents: (
         await Student.find({
-          $or: [{ "LTE20.status": { $eq: true } }, { "GT20.status": { $eq: true } }],
+          $or: [
+            { "LTE20.status": { $eq: true } },
+            { "GT20.status": { $eq: true } },
+          ],
         })
       ).length,
       unplacedStudents: 0,
@@ -440,10 +447,10 @@ module.exports.get_dashboard_details = async (req, res) => {
     // for (const company of companyList) {
     //   sumOfCTC += company.ctc;
     // }
-    for(const job of jobList){
+    for (const job of jobList) {
       sumOfCTC += job.ctc;
     }
-    console.log('sumOfCTC: ', sumOfCTC);
+    console.log("sumOfCTC: ", sumOfCTC);
     dashboard_details.averageCTC = sumOfCTC / companyList.length;
     res.status(200).json({ success: true, dashboard_details });
   } catch (err) {
@@ -454,48 +461,51 @@ module.exports.get_dashboard_details = async (req, res) => {
 module.exports.get_job_round_applied_students = async (req, res) => {
   try {
     const { jobId, roundNo } = req.body;
-    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
-      const studentIds = [];
-      job.jobApplications.map(application => { 
-        if(application.studentRoundCleared >= roundNo-1) {
-          studentIds.push(application.studentId);
-        } 
+    Job.findById(jobId)
+      .populate({ path: "jobApplications" })
+      .exec(async function (err, job) {
+        const studentIds = [];
+        job.jobApplications.map((application) => {
+          if (application.studentRoundCleared >= roundNo - 1) {
+            studentIds.push(application.studentId);
+          }
+        });
+        const data = await Student.find({ _id: { $in: studentIds } });
+        res.status(200).json({
+          success: true,
+          data,
+          message: `Applied Students of Round ${roundNo}.`,
+        });
       });
-      const data = await Student.find({ _id: {$in: studentIds }});
-      res.status(200).json({ 
-        success: true, 
-        data, 
-        message: `Applied Students of Round ${roundNo}.`
-      });
-    });
   } catch (err) {
     res.status(400).json({
-        success: false,
-        error: err,
-        message: "Error while getting Applied Students",
-      });
+      success: false,
+      error: err,
+      message: "Error while getting Applied Students",
+    });
   }
 };
 
 module.exports.get_job_round_qualified_students = async (req, res) => {
   try {
     const { jobId, roundNo } = req.body;
-    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
-      const studentIds = [];
-      job.jobApplications.map(application => { 
-        if(application.studentRoundCleared >= roundNo) {
-          studentIds.push(application.studentId);
-        } 
+    Job.findById(jobId)
+      .populate({ path: "jobApplications" })
+      .exec(async function (err, job) {
+        const studentIds = [];
+        job.jobApplications.map((application) => {
+          if (application.studentRoundCleared >= roundNo) {
+            studentIds.push(application.studentId);
+          }
+        });
+        const data = await Student.find({ _id: { $in: studentIds } });
+        res.status(200).json({
+          success: true,
+          data,
+          message: `Qualified Students of Round ${roundNo}.`,
+        });
       });
-      const data = await Student.find({ _id: {$in: studentIds }});
-      res.status(200).json({ 
-        success: true, 
-        data, 
-        message: `Qualified Students of Round ${roundNo}.`
-      });
-    });
-  } 
-  catch (err) {
+  } catch (err) {
     res.status(400).json({
       success: false,
       error: err,
@@ -507,20 +517,25 @@ module.exports.get_job_round_qualified_students = async (req, res) => {
 module.exports.get_job_round_disqualified_students = async (req, res) => {
   try {
     const { jobId, roundNo } = req.body;
-    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
-      const studentIds = [];
-      job.jobApplications.map(application => { 
-        if((application.studentRoundCleared == roundNo-1) && (application.studentResult == false)) {
-          studentIds.push(application.studentId);
-        } 
+    Job.findById(jobId)
+      .populate({ path: "jobApplications" })
+      .exec(async function (err, job) {
+        const studentIds = [];
+        job.jobApplications.map((application) => {
+          if (
+            application.studentRoundCleared == roundNo - 1 &&
+            application.studentResult == false
+          ) {
+            studentIds.push(application.studentId);
+          }
+        });
+        const data = await Student.find({ _id: { $in: studentIds } });
+        res.status(200).json({
+          success: true,
+          data,
+          message: `Disqualified Students of Round ${roundNo}.`,
+        });
       });
-      const data = await Student.find({ _id: {$in: studentIds }});
-      res.status(200).json({ 
-        success: true, 
-        data, 
-        message: `Disqualified Students of Round ${roundNo}.` 
-      });
-    });
   } catch (err) {
     res.status(400).json({
       success: false,
@@ -569,11 +584,30 @@ module.exports.get_placed_students = async (req, res) => {
 // generate report
 module.exports.generate_report = async (req, res) => {
   try {
-    
+    const reportArr = [];
+
+    let jobs = await Job.find().populate("getCompany");
+
+    for (let i = 0; i < jobs.length; i++) {
+      let job = jobs[i];
+      let obj = {};
+      // console.log(jobs[i]);
+      const company = await Company.findById(job.companyId);
+      obj.companyName = company.name;
+
+      const cgpa = job.criteria.engCgpa ? job.criteria.engCgpa : "NC";
+
+      // todo UG and PG => branch criteria
+
+      let UG = {};
+      // const companywisePlacedStudentList = await
+    }
+
+    res.send({ success: "true" });
   } catch (err) {
-    console.log(err)
+    console.log("Error in generating report:", err);
   }
-}
+};
 
 module.exports.student_application_delete = async (req, res) => {
   try {
@@ -583,8 +617,8 @@ module.exports.student_application_delete = async (req, res) => {
     if (!application) {
       return res.status(404).json({
         success: false,
-        message: "Application not found"
-      })
+        message: "Application not found",
+      });
     }
 
     await application.remove();
@@ -593,12 +627,11 @@ module.exports.student_application_delete = async (req, res) => {
       success: true,
       message: "Application Deleted Successfully.",
     });
-    
   } catch (err) {
-    console.log('err in outermost try catch',err)
+    console.log("err in outermost try catch", err);
     res.status(400).json({
       success: false,
       message: "Error while Deleting Application.",
     });
   }
-}
+};

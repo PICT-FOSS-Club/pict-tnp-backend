@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const Company = require("../models/company");
 const Job = require("../models/job");
 const Application = require("../models/application");
-const File = require("../models/file");
+const Resume = require("../models/resume");
 const crypto = require("crypto");
 const nodeMailer = require("nodemailer");
 const multer = require("multer");
@@ -14,15 +14,22 @@ const path = require("path");
 let upload = multer({
   storage: multer.diskStorage({
     destination: async (req, file, cb) => {
-      // ** code for making directory using company ID make sure to change schema of file.js
-      let companyId = req.params.companyId;
+      // ** code for making directory using job ID make sure to change schema of file.js
+      let jobId = req.params.jobId;
+      let job = await Job.findById(jobId);
+      if (!job) {
+        throw Error("Job cannot be found.");
+      }
+      req.job = job;
+      let companyId = job.companyId;
       let company = await Company.findById(companyId);
-      req.company = company;
       if (!company) {
         throw Error("Company cannot be found!");
       }
-      company = company.name;
-      let path = `./uploads/${company}`;
+      req.company = company;
+      let companyName = company.name;
+      let jobName = job.name;
+      let path = `./uploads/${companyName}/${jobName}`;
       if (!fs.existsSync(path)) {
         fs.mkdirSync(path, { recursive: true });
       }
@@ -31,7 +38,6 @@ let upload = multer({
     filename: async (req, file, cb) => {
       //  ** with student auth Code
       let studentId = req.student._id;
-      console.log(studentId);
       let student = await Student.findById(studentId);
       if (!student) {
         throw Error("Student cannot be found!");
@@ -128,7 +134,6 @@ module.exports.student_profile = async (req, res) => {
 
 module.exports.drive_compaines = async (req, res) => {
   try {
-    // const date = new Date().toISOString();
     // ! here dont add .exec IN ARROWS after populate, if you do then send the response inside exec function else companyList will be undefined, so better not to use exec function here
     const companyList = await Company.find().populate({
       path: "jobDescriptions",
@@ -258,7 +263,12 @@ module.exports.apply_company = async (req, res) => {
     todaysDate = todaysDate.toISOString();
     let companyEndDate = job.endDate;
     let formattedCompanyEndDate = companyEndDate.toISOString();
-    // console.log("Todays date is:", todaysDate, " Companys end date is:", formattedCompanyEndDate);
+    console.log(
+      "Todays date is:",
+      todaysDate,
+      " Companys end date is:",
+      formattedCompanyEndDate
+    );
 
     // *  todo : Check Date Criteria
     // ! careful with logic here
@@ -461,18 +471,43 @@ module.exports.student_update_password = async (req, res) => {
 module.exports.resume_upload = async (req, res) => {
   upload(req, res, async () => {
     try {
-      const file = await File.create({
-        student_id: req.student._id,
-        company_id: req.params.companyId,
-        file_path: `./uploads/${req.company.name}/${req.filename}.pdf`,
+      const resumeexists = await Resume.find({
+        studentId: req.student._id,
+        companyId: req.company._id,
+        jobId: req.job._id,
       });
-      console.log(file);
-      res.status(201).json({ message: "Resume uploaded Successfully" });
+      console.log(resumeexists);
+      if (resumeexists.length == 0) {
+        const resume = await Resume.create({
+          studentId: req.student._id,
+          companyId: req.company._id,
+          jobId: req.job._id,
+          file_path: `./uploads/${req.company.name}/${req.job.name}/${req.filename}.pdf`,
+        });
+        console.log(resume);
+        res.status(201).json({
+          success: true,
+          message: "Resume uploaded Successfully",
+          resume,
+        });
+      } else {
+        res.status(201).json({
+          success: true,
+          message: "Resume updated Successfully",
+          resume: resumeexists[0],
+        });
+      }
     } catch (err) {
-      res.status(400).json({ message: err.message });
+      res.status(400).json({ success: false, message: err.message });
       // ** code for resume-upload using student authentication middleware
-      if (fs.existsSync(`./uploads/${req.company.name}/${req.filename}.pdf`)) {
-        fs.unlink(`./uploads/${req.params.companyId}/${req.filename}.pdf`);
+      if (
+        fs.existsSync(
+          `./uploads/${req.company.name}/${req.job.name}/${req.filename}.pdf`
+        )
+      ) {
+        fs.unlink(
+          `./uploads/${req.company.name}/${req.job.name}/${req.filename}.pdf`
+        );
       }
     }
   });

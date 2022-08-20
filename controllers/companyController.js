@@ -1,11 +1,31 @@
 const Job = require("../models/job");
 const Company = require("../models/company");
+const CompanyFile = require("../models/companyFile");
+const multer = require("multer");
+const fs = require("fs-extra");
+const mv = require("mv");
+const path = require("path");
 const Application = require("../models/application");
 const Student = require("../models/student");
 const mongoose = require("mongoose");
 const nodeMailer = require("nodemailer");
 
 // Company Routes --> /company/
+
+let upload = multer({
+  storage: multer.diskStorage({
+    destination: async (req, file, cb) => {
+      let path = `./uploads/trial/files`;
+      if (!fs.existsSync(path)) {
+        fs.mkdirSync(path, { recursive: true });
+      }
+      cb(null, path);
+    },
+    filename: async (req, file, cb) => {
+      cb(null, "trial" + path.extname(file.originalname));
+    },
+  }),
+}).single("company-file");
 
 // Add Company
 module.exports.add_company = async (req, res) => {
@@ -22,6 +42,44 @@ module.exports.add_company = async (req, res) => {
       message: "Error while applying company drive.",
     });
   }
+  upload(req, res, async () => {
+    try {
+      const company = await Company.create(JSON.parse(req.body.company));
+      req.company = company;
+      let oldPath = `./uploads/trial/files/trial.pdf`;
+      let newPath = `./uploads/${company.name}/files/${company.name}.pdf`;
+
+      mv(oldPath, newPath, { mkdirp: true }, async function (err) {
+        if (err) {
+          const co = await Company.deleteOne({ _id: company._id });
+          res
+            .status(400)
+            .json({ success: false, message: "Something Went Wrong!" });
+        }
+      });
+      const companyFile = await CompanyFile.create({
+        companyId: company._id,
+        path: `./uploads/${company.name}/file/${company.name}.pdf`,
+      });
+      req.companyFile = companyFile;
+      res.status(201).json({
+        success: true,
+        message: "Company Details Added Successfully.",
+        company,
+        companyFile,
+      });
+    } catch (err) {
+      const co = await Company.deleteOne({ _id: company._id });
+      if (
+        fs.existsSync(
+          `./uploads/${req.company.name}/file/${req.company.name}.pdf`
+        )
+      ) {
+        fs.unlink(`./uploads/${req.company.name}/file/${req.company.name}.pdf`);
+      }
+      res.status(400).json({ success: false, message: err.message });
+    }
+  });
 };
 
 // Update Company
@@ -83,6 +141,7 @@ module.exports.delete_company = async (req, res) => {
 module.exports.add_job = async (req, res) => {
   try {
     await Job.create(req.body);
+
     const company = await Company.findById(req.body.companyId).populate({
       path: "jobDescriptions",
     });
