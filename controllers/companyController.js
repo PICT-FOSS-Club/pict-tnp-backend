@@ -7,7 +7,9 @@ module.exports.add_company = async (req, res) => {
   const company = req.body;
   try {
     await Company.create(company);
-    res.status(201).json({ success: true, message: "Company Drive Added Successfully." });
+    res
+      .status(201)
+      .json({ success: true, message: "Company Drive Added Successfully." });
   } catch (err) {
     res.status(400).json({
       success: false,
@@ -20,8 +22,12 @@ module.exports.add_company = async (req, res) => {
 module.exports.add_job = async (req, res) => {
   try {
     await Job.create(req.body);
-    const company = await Company.findById(req.body.companyId).populate({path: 'jobDescriptions'});
-    res.status(201).json({ success: true, company, message: "Job Added Successfully." });
+    const company = await Company.findById(req.body.companyId).populate({
+      path: "jobDescriptions",
+    });
+    res
+      .status(201)
+      .json({ success: true, company, message: "Job Added Successfully." });
   } catch (err) {
     console.log(err);
     res.status(400).json({
