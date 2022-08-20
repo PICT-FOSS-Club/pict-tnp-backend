@@ -14,24 +14,50 @@ router.post("/student/logout", authStudent, studentController.logout_student);
 router.get("/student/me", authStudent, studentController.student_profile);
 
 // get Currently On Going Company Jobs,
-router.get("/student/company/jobs", authStudent, studentController.drive_compaines);
+router.get(
+  "/student/company/jobs",
+  authStudent,
+  studentController.drive_compaines
+);
 
 // company details,
-router.get("/student/company/details/:companyId", authStudent, studentController.company_detials);
+router.get(
+  "/student/company/details/:companyId",
+  authStudent,
+  studentController.company_detials
+);
 
 // studentApplyForCompanies later - companyid take from req.body._id
-router.post("/student/company/apply", authStudent, studentController.apply_company);
+router.post(
+  "/student/company/apply",
+  authStudent,
+  studentController.apply_company
+);
 
 // reset student password
-router.post("/student/password/reset", studentController.student_reset_password);
+router.post(
+  "/student/password/reset",
+  studentController.student_reset_password
+);
 
 // forgot passwords
-router.post("/student/password/forgot", studentController.student_forgot_password);
+router.post(
+  "/student/password/forgot",
+  studentController.student_forgot_password
+);
 
 // update student password
-router.post("/student/password/update", authStudent, studentController.student_update_password);
+router.post(
+  "/student/password/update",
+  authStudent,
+  studentController.student_update_password
+);
 
 // resume upload
-router.post("/student/resume/upload/:companyId", authStudent, studentController.resume_upload);
+router.post(
+  "/student/resume/upload/:jobId",
+  authStudent,
+  studentController.resume_upload
+);
 
 module.exports = router;
