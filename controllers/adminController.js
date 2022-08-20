@@ -374,14 +374,16 @@ module.exports.get_company = async (req, res) => {
   }
 };
 
-module.exports.get_all_companies = async (req, res) => {
+module.exports.get_company_jobs = async (req, res) => {
   try {
-    const companyList = await Company.find();
-    return res
-      .status(200)
-      .json({ success: true, message: "Company List", data: companyList });
+    const companyList = await Company.find().populate({ path: 'jobDescriptions' })
+    res.status(200).json({
+      success: true,
+      message: "current companies drive",
+      data: companyList,
+    });
   } catch (err) {
-    res.status(400).json({ errors: err, success: false });
+    res.status(400).json({ success: false, error: err, message: "Error while getting the company jobs" });
   }
 };
 
@@ -449,111 +451,83 @@ module.exports.get_dashboard_details = async (req, res) => {
   }
 };
 
-module.exports.get_company_round_applied_students = async (req, res) => {
+module.exports.get_job_round_applied_students = async (req, res) => {
   try {
-    // const studentList = await Company.aggregate([
-    //   { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-    //   { $unwind: "$appliedStudents" },
-    //   {
-    //     $match: {
-    //       "appliedStudents.roundCleared": {
-    //         $gte: parseInt(req.params.number) - 1,
-    //       },
-    //     },
-    //   },
-    //   {
-    //     $project: {
-    //       _id: 0,
-    //       studentId: "$appliedStudents.studentId",
-    //       studentName: "$appliedStudents.studentName",
-    //       studentEmail: "$appliedStudents.studentEmail",
-    //     },
-    //   },
-    // ]);
-    const studentList = await Application.find({jobId: req.params.jobId})
-    res.status(200).json({ success: true, studentList });
+    const { jobId, roundNo } = req.body;
+    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
+      const studentIds = [];
+      job.jobApplications.map(application => { 
+        if(application.studentRoundCleared >= roundNo-1) {
+          studentIds.push(application.studentId);
+        } 
+      });
+      const data = await Student.find({ _id: {$in: studentIds }});
+      res.status(200).json({ 
+        success: true, 
+        data, 
+        message: `Applied Students of Round ${roundNo}.`
+      });
+    });
   } catch (err) {
-    res
-      .status(400)
-      .json({
+    res.status(400).json({
         success: false,
+        error: err,
         message: "Error while getting Applied Students",
       });
   }
 };
 
-module.exports.get_company_round_qualified_students = async (req, res) => {
-  // try {
-    // const studentList = await Company.aggregate([
-    //   { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-    //   { $unwind: "$appliedStudents" },
-    //   {
-    //     $match: {
-    //       "appliedStudents.roundCleared": { $gte: parseInt(req.params.number) },
-    //     },
-    //   },
-    //   {
-    //     $project: {
-    //       _id: 0,
-    //       studentId: "$appliedStudents.studentId",
-    //       studentName: "$appliedStudents.studentName",
-    //       studentEmail: "$appliedStudents.studentEmail",
-    //     },
-    //   },
-    // ]);
-
-  // } catch (err) {
-  //   res
-  //     .status(400)
-  //     .json({
-  //       success: false,
-  //       message: "Error while getting Qualified Students",
-  //     });
-  // }
+module.exports.get_job_round_qualified_students = async (req, res) => {
+  try {
+    const { jobId, roundNo } = req.body;
+    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
+      const studentIds = [];
+      job.jobApplications.map(application => { 
+        if(application.studentRoundCleared >= roundNo) {
+          studentIds.push(application.studentId);
+        } 
+      });
+      const data = await Student.find({ _id: {$in: studentIds }});
+      res.status(200).json({ 
+        success: true, 
+        data, 
+        message: `Qualified Students of Round ${roundNo}.`
+      });
+    });
+  } 
+  catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while getting Disqualified Students",
+    });
+  }
 };
 
-module.exports.get_company_round_disqualified_students = async (req, res) => {
-  // try {
-    // const studentList = await Company.aggregate([
-    //   { $match: { _id: mongoose.Types.ObjectId(req.params.companyId) } },
-    //   { $unwind: "$appliedStudents" },
-    //   {
-    //     $match: {
-    //       $and: [
-    //         {
-    //           "appliedStudents.roundCleared": {
-    //             $eq: parseInt(req.params.number) - 1,
-    //           },
-    //         },
-    //         { "appliedStudents.studentResult": { $eq: false } },
-    //       ],
-    //     },
-    //   },
-    //   {
-    //     $project: {
-    //       _id: 0,
-    //       studentId: "$appliedStudents.studentId",
-    //       studentName: "$appliedStudents.studentName",
-    //       studentEmail: "$appliedStudents.studentEmail",
-    //     },
-    //   },
-    // ]);
-    // const studentList = await Application.find({
-    //   $and:[
-    //     {jobId: req.params.jobId},
-    //     {studentResult: false},
-    //     {studentRoundCleared:  {$eq: parseInt(req.params.number) - 1}}
-    //   ]
-    // })
-    // res.status(200).json({ success: true, studentList });
-  // } catch (err) {
-  //   res
-  //     .status(400)
-  //     .json({
-  //       success: false,
-  //       message: "Error while getting Disqualified Students",
-  //     });
-  // }
+module.exports.get_job_round_disqualified_students = async (req, res) => {
+  try {
+    const { jobId, roundNo } = req.body;
+    Job.findById(jobId).populate({path: 'jobApplications'}).exec(async function (err, job){
+      const studentIds = [];
+      job.jobApplications.map(application => { 
+        if((application.studentRoundCleared == roundNo-1) && (application.studentResult == false)) {
+          studentIds.push(application.studentId);
+        } 
+      });
+      const data = await Student.find({ _id: {$in: studentIds }});
+      res.status(200).json({ 
+        success: true, 
+        data, 
+        message: `Disqualified Students of Round ${roundNo}.` 
+      });
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while getting Disqualified Students",
+    });
+  }
 };
 
 //

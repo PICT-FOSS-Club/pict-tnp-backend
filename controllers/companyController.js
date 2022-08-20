@@ -159,7 +159,25 @@ module.exports.job_round_add = async (req, res) => {
 }
 
 // update company job round
-module.exports.job_round_update = async (req, res) => { }
+module.exports.job_round_update = async (req, res) => {
+  const { jobId, round } = req.body;
+  try {
+    const roundNo = round.roundNo - 1;
+    const job = await Job.findById(jobId);
+    job.roundDetails[roundNo] = round;
+    job.save();
+    res.status(200).json({
+      success: true,
+      message: "Company Details Updated Successfully.",
+    });
+  } catch(err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Updating Company Details."
+    });
+  }
+}
 
 // delete company job round
 module.exports.job_round_delete = async (req, res) => { }
@@ -182,7 +200,7 @@ module.exports.job_round_result_declare = async (req, res) => {
       await Application.updateMany({ jobId: jobId, studentId: { $in: disqualifiedStudentIds } }, { studentResult: false })
     }
     if(job.totalRounds === roundNo){
-      (job.ctc > 20) ? (await Student.updateMany({ _id: { $in: qaulifiedStudentIds } }, { "GT20.status": true, "GT20.jobId": jobId })) : (await Student.updateMany({_id: { $in: qaulifiedStudentIds } }, { "LTE20.status": true , "LTE20.jobId": jobId }));
+      (job.ctc > 20) ? (await Student.updateMany({ _id: { $in: qaulifiedStudentIds } }, { "GT20.status": true, "GT20.jobId": jobId })) : (await Student.updateMany({_id: { $in: qaulifiedStudentIds } }, { "LTE20.status": true, "LTE20.jobId": jobId }));
       job.jobResult = true;
     }
     job.save();

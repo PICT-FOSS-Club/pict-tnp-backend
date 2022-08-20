@@ -27,16 +27,16 @@ router.post("/admin/password/reset", adminController.admin_reset_password);
 router.post("/admin/password/forgot", adminController.admin_forgot_password);
 
 // signup a single student
-router.post( "/admin/register/student", authAdmin, adminController.register_student);
+router.post("/admin/register/student", authAdmin, adminController.register_student);
 
 // signup students
-router.post( "/admin/register/students", authAdmin, adminController.register_students);
+router.post("/admin/register/students", authAdmin, adminController.register_students);
 
 // get a company
-router.get( "/admin/company/details/:companyId", authAdmin, adminController.get_company);
+router.get("/admin/company/details/:companyId", authAdmin, adminController.get_company);
 
 // get all companies
-router.get("/admin/company/all", authAdmin, adminController.get_all_companies);
+router.get("/admin/company/jobs", authAdmin, adminController.get_company_jobs);
 
 // get a student
 router.get(
@@ -55,17 +55,14 @@ router.get(
   adminController.get_dashboard_details
 );
 
-// get round{num} applied students for a company
-// router.get("/admin/company/applied/:number/:companyId", authAdmin, adminController.get_company_round_applied_students);
-router.get("/admin/company/applied/:number/:jobId", authAdmin, adminController.get_company_round_applied_students);
+// get Applied Students of a Job for Particular Round
+router.get("/admin/company/applied", authAdmin, adminController.get_job_round_applied_students);
 
-// get round{num} qualified students for a company
-// router.get( "/admin/company/qualified/:number/:companyId", authAdmin, adminController.get_company_round_qualified_students);
-router.get( "/admin/company/qualified/:number/:jobId", authAdmin, adminController.get_company_round_qualified_students);
+// get qualified students for a round of a  job
+router.get("/admin/company/qualified", authAdmin, adminController.get_job_round_qualified_students);
 
-// get round{num} disqualified students for a company
-// router.get( "/admin/company/disqualified/:number/:companyId", authAdmin, adminController.get_company_round_disqualified_students);
-router.get( "/admin/company/disqualified/:number/:jobId", authAdmin, adminController.get_company_round_disqualified_students);
+// get disqualified students for a round of a  job
+router.get("/admin/company/disqualified", authAdmin, adminController.get_job_round_disqualified_students);
 
 // Get Placed students list,excel:
 router.get("/admin/student/placed", authAdmin, adminController.get_placed_students);
