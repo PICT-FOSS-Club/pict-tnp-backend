@@ -186,18 +186,33 @@ module.exports.apply_company = async (req, res) => {
     // * branch checking
 
     let applicableBranchArray = [];
-    const csApplicable = job.criteria.branch.cs;
-    if (csApplicable) applicableBranchArray.push("cs");
-    const itApplicable = job.criteria.branch.it;
-    if (itApplicable) applicableBranchArray.push("it");
-    const entcApplicable = job.criteria.branch.entc;
-    if (entcApplicable) applicableBranchArray.push("entc");
+    let csApplicable, itApplicable, entcApplicable;
+    if (student.isUg) {
+      csApplicable = job.criteria.ug.cs;
+      if (csApplicable) applicableBranchArray.push("cs");
+      itApplicable = job.criteria.ug.it;
+      if (itApplicable) applicableBranchArray.push("it");
+      entcApplicable = job.criteria.ug.entc;
+      if (entcApplicable) applicableBranchArray.push("entc");
 
-    // console.table(applicableBranchArray);
+      if (!applicableBranchArray.includes(student.branch)) {
+        canApply = false;
+      }
+    } else {
+      applicableBranchArray = [];
 
-    if (!applicableBranchArray.includes(student.branch)) {
-      canApply = false;
+      csApplicable = job.criteria.pg.cs;
+      if (csApplicable) applicableBranchArray.push("cs");
+      itApplicable = job.criteria.pg.it;
+      if (itApplicable) applicableBranchArray.push("it");
+      entcApplicable = job.criteria.pg.entc;
+      if (entcApplicable) applicableBranchArray.push("entc");
+
+      if (!applicableBranchArray.includes(student.branch)) {
+        canApply = false;
+      }
     }
+
     // console.log("canapply after branch cheking", canApply);
 
     // * checking course
