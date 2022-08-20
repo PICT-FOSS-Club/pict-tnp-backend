@@ -257,15 +257,26 @@ const studentSchema = new mongoose.Schema(
       required: true,
       minlength: 7,
     },
-    isLTE20: {
-      type: Boolean,
-      default: false,
+    LTE20: {
+      status: {
+        type: Boolean,
+        default: false,
+      },
+      jobId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Job",
+      }
     },
-    isGT20: {
-      type: Boolean,
-      default: false,
+    GT20: {
+      status: {
+        type: Boolean,
+        default: false,
+      },
+      jobId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Job",
+      }
     },
-
     //Ug and Pg boolean
     isUg: { type: Boolean, default: true },
 
@@ -389,9 +400,6 @@ module.exports.validate = (student) => {
     // Amcat details
     AmcatScore: Joi.number(),
     password: Joi.string().required().min(7),
-
-    isLTE20: Joi.boolean(),
-    isGT20: Joi.boolean(),
 
     //new validations:
     attendance: Joi.number(),

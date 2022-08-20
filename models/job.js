@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Application = require("./application");
 
 const jobSchema = new mongoose.Schema(
     {
@@ -96,11 +97,11 @@ const jobSchema = new mongoose.Schema(
             default: false,
         },
     },
-    {timestamps: true}
+    { timestamps: true }
 );
 
 // * We can get all the jobApplications of this Job using Populate as follows:
-// ! const job = await Job.find().populate({path: 'jobApplications'});
+// ! const job = await Job.findById({ _id }).populate({path: 'jobApplications'});
 // ? Basically we get a Array with Name 'jobApplications' which contains All the Applications and all Details of this Job
 jobSchema.virtual("jobApplications", {
     ref: "Application",
@@ -111,6 +112,32 @@ jobSchema.virtual("jobApplications", {
 
 jobSchema.set('toObject', { virtuals: true });
 jobSchema.set('toJSON', { virtuals: true });
+
+jobSchema.pre("remove", async function(next){
+    // console.log('this',this);
+    // this.model("Application")/remove({ _id: this._id }, next);
+
+    try {        
+        const applications = await Application.find({
+            jobId: this._id
+        })
+    
+        if(!applications){
+            console.log('err in job pre in finding application')
+        }
+    
+        // applications.remove();
+        for(const application of applications){
+            await application.remove();
+        }
+    } catch (err) {
+        console.log('err in job pre',err)
+    }
+    // await Application.deleteMany({
+    //     jobId: this._id
+    // });
+    next();
+});
 
 const Job = mongoose.model("Job", jobSchema);
 

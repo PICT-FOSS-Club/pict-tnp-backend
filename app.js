@@ -6,7 +6,6 @@ const studentRouter = require("./routes/studentRoute");
 const adminRouter = require("./routes/adminRoute");
 const companyRouter = require("./routes/companyRoute");
 const cors = require("cors");
-
 const app = express();
 
 const port = process.env.PORT;

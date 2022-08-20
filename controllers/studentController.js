@@ -134,12 +134,19 @@ module.exports.student_profile = async (req, res) => {
 
 module.exports.drive_compaines = async (req, res) => {
   try {
+<<<<<<< HEAD
     const date = new Date().toISOString();
     // ! here dont add .exec after populate, if you do then send the response inside exec function else companyLost will be undefined, so better not to use exec function here
     const companyList = await Company.find().populate({
       path: "jobDescriptions",
     });
     console.log("company list", companyList);
+=======
+    // const date = new Date().toISOString();
+    // ! here dont add .exec IN ARROWS after populate, if you do then send the response inside exec function else companyList will be undefined, so better not to use exec function here 
+    const companyList = await Company.find().populate({ path: 'jobDescriptions'})
+    console.log('company list', companyList)
+>>>>>>> origin/main
     res.status(200).json({
       success: true,
       message: "current companies drive",
@@ -199,7 +206,7 @@ module.exports.apply_company = async (req, res) => {
     if (!applicableBranchArray.includes(student.branch)) {
       canApply = false;
     }
-    console.log("canapply after branch cheking", canApply);
+    // console.log("canapply after branch cheking", canApply);
 
     // * checking course
     const companyCriteriaCourse = job.criteria.courseName.ug;
@@ -207,7 +214,7 @@ module.exports.apply_company = async (req, res) => {
     if (companyCriteriaCourse !== student.isUg) {
       canApply = false;
     }
-    console.log("canapply after course cheking", canApply);
+    // console.log("canapply after course cheking", canApply);
 
     // * Gender criteria checking
     const studentGender = student.gender;
@@ -215,7 +222,7 @@ module.exports.apply_company = async (req, res) => {
     const femaleApplicable = job.criteria.gender.female;
     const bothApplicable = job.criteria.gender.both;
 
-    console.table(job.criteria.gender);
+    // console.table(job.criteria.gender);
 
     if (!bothApplicable) {
       if (studentGender == "female") {
@@ -228,7 +235,7 @@ module.exports.apply_company = async (req, res) => {
         }
       }
     }
-    console.log("canapply after gender cheking", canApply);
+    // console.log("canapply after gender cheking", canApply);
 
     // * checking SSC percentage
     // ! HSC % checking remains as WDKT student has done hsc or diploma and company criteria are
@@ -243,7 +250,7 @@ module.exports.apply_company = async (req, res) => {
       );
       canApply = false;
     }
-    console.log("canapply after ssc cheking", canApply);
+    // console.log("canapply after ssc cheking", canApply);
 
     // * checking End date (last date of application) Criteria
     var today = new Date();
@@ -264,26 +271,30 @@ module.exports.apply_company = async (req, res) => {
     todaysDate = todaysDate.toISOString();
     let companyEndDate = job.endDate;
     let formattedCompanyEndDate = companyEndDate.toISOString();
+<<<<<<< HEAD
     console.log(
       "Todays date is:",
       todaysDate,
       " Companys end date is:",
       formattedCompanyEndDate
     );
+=======
+    // console.log("Todays date is:", todaysDate, " Companys end date is:", formattedCompanyEndDate);
+>>>>>>> origin/main
 
     // *  todo : Check Date Criteria
     // ! careful with logic here
     if (formattedCompanyEndDate < todaysDate) {
       canApply = false;
     }
-    console.log("canApply after end-date checking:", canApply);
+    // console.log("canApply after end-date checking:", canApply);
 
     // * checking amcat Criteria
     // ! note requiredAmcatScore is in job where RequiredAmcatScore was in company
     if (job.criteria.requiredAmcatScore > student.AmcatScore) {
       canApply = false;
     }
-    console.log("canApply after AMCAT checking:", canApply);
+    // console.log("canApply after AMCAT checking:", canApply);
 
     // ! note requiredAttendance is in job where RequiredAttendance was in company
     // if (job.criteria.requiredAttendance > student.attendance) {
@@ -294,7 +305,7 @@ module.exports.apply_company = async (req, res) => {
     if (job.criteria.engCgpa > student.aggrCgpa) {
       canApply = false;
     }
-    console.log("canApply after aggr.CGPA checking:", canApply);
+    // console.log("canApply after aggr.CGPA checking:", canApply);
 
     if (canApply) {
       const application = await Application.create({
