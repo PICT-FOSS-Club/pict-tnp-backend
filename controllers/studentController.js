@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const Company = require("../models/company");
 const Job = require("../models/job");
 const Application = require("../models/application");
-const File = require("../models/file");
+const Resume = require("../models/resume");
 const crypto = require("crypto");
 const nodeMailer = require("nodemailer");
 const multer = require("multer");
@@ -14,15 +14,22 @@ const path = require("path");
 let upload = multer({
   storage: multer.diskStorage({
     destination: async (req, file, cb) => {
-      // ** code for making directory using company ID make sure to change schema of file.js
-      let companyId = req.params.companyId;
+      // ** code for making directory using job ID make sure to change schema of file.js
+      let jobId = req.params.jobId;
+      let job = await Job.findById(jobId);
+      if (!job) {
+        throw Error("Job cannot be found.");
+      }
+      req.job = job;
+      let companyId = job.companyId;
       let company = await Company.findById(companyId);
-      req.company = company;
       if (!company) {
         throw Error("Company cannot be found!");
       }
-      company = company.name;
-      let path = `./uploads/${company}`;
+      req.company = company;
+      let companyName = company.name;
+      let jobName = job.name;
+      let path = `./uploads/${companyName}/${jobName}`;
       if (!fs.existsSync(path)) {
         fs.mkdirSync(path, { recursive: true });
       }
@@ -31,7 +38,6 @@ let upload = multer({
     filename: async (req, file, cb) => {
       //  ** with student auth Code
       let studentId = req.student._id;
-      console.log(studentId);
       let student = await Student.findById(studentId);
       if (!student) {
         throw Error("Student cannot be found!");
@@ -79,7 +85,9 @@ module.exports.login_student = async (req, res) => {
   try {
     let token;
     // const student = await Student.login(email, password);
-    const student = await Student.findOne({ email: email }).populate({path: 'applications'});
+    const student = await Student.findOne({ email: email }).populate({
+      path: "applications",
+    });
     if (student) {
       const isMatch = await bcrypt.compare(password, student.password);
       // token = createToken(student._id);
@@ -115,7 +123,9 @@ module.exports.logout_student = (req, res) => {
 // student profile
 module.exports.student_profile = async (req, res) => {
   try {
-    const student = await Student.findById(req.student._id).populate({path: 'applications'});
+    const student = await Student.findById(req.student._id).populate({
+      path: "applications",
+    });
     res.status(200).json({ student, success: true });
   } catch {
     res.status(400).json({ success: false, message: "Login or Signup" });
@@ -125,9 +135,11 @@ module.exports.student_profile = async (req, res) => {
 module.exports.drive_compaines = async (req, res) => {
   try {
     const date = new Date().toISOString();
-    // ! here dont add .exec after populate, if you do then send the response inside exec function else companyLost will be undefined, so better not to use exec function here 
-    const companyList = await Company.find().populate({ path: 'jobDescriptions' })
-    console.log('company list', companyList)
+    // ! here dont add .exec after populate, if you do then send the response inside exec function else companyLost will be undefined, so better not to use exec function here
+    const companyList = await Company.find().populate({
+      path: "jobDescriptions",
+    });
+    console.log("company list", companyList);
     res.status(200).json({
       success: true,
       message: "current companies drive",
@@ -144,31 +156,28 @@ module.exports.apply_company = async (req, res) => {
   try {
     const job = await Job.findById(req.body.jobId);
     if (!job) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Job not found" });
+      return res.status(403).json({ success: false, message: "Job not found" });
     }
 
     const student = await Student.findById(req.student._id);
 
     const studentAlreadyApplied = await Application.findOne({
-      $and:[
-        {studentId: req.student._id},
-        {jobId: req.body.jobId}
-      ]
-    })
+      $and: [{ studentId: req.student._id }, { jobId: req.body.jobId }],
+    });
 
-    if(studentAlreadyApplied){
-      return res.status(403).json({success:false, message:"Student already applied"})    
+    if (studentAlreadyApplied) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Student already applied" });
     }
 
     // todo: checking eligible before making student's application
-    // * Criteria order 
+    // * Criteria order
     // * 1. check branch - DONE
     // * 2. Course - ug/pg - DONE
     // * 3. Gender - DONE
     // ! 4. HSC & SSC percentage - SSC DONE, HSC REMAINS
-    // ! 5. End date (last date of application) Criteria - DONE WITH BACKEND, CHECK WITH FRONTEND 
+    // ! 5. End date (last date of application) Criteria - DONE WITH BACKEND, CHECK WITH FRONTEND
     // * 6. Amcat criteria - DONE
     // * 7. Attendance Criteria - DONE
     // * 8. CGPA criteria - DONE
@@ -246,14 +255,21 @@ module.exports.apply_company = async (req, res) => {
     //   today.getDate();
 
     // ! Note -  new Date(kolkata....).... will give date-time in dd/mm/yyyy ss:mm:hh format
-    // ! so to convert it into mongoose format for checking create another function new DatetodaysDate) which will give mongoose format YYYY-MM-DDTHH:MM:SS.SSSZ 
-    var todaysDate = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
+    // ! so to convert it into mongoose format for checking create another function new DatetodaysDate) which will give mongoose format YYYY-MM-DDTHH:MM:SS.SSSZ
+    var todaysDate = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
     todaysDate = new Date(todaysDate);
     // * above todaysDate is in object type, convert it into ISOStrig type not string(thurs 21 august 2022) type
     todaysDate = todaysDate.toISOString();
     let companyEndDate = job.endDate;
     let formattedCompanyEndDate = companyEndDate.toISOString();
-    console.log("Todays date is:", todaysDate, " Companys end date is:", formattedCompanyEndDate);
+    console.log(
+      "Todays date is:",
+      todaysDate,
+      " Companys end date is:",
+      formattedCompanyEndDate
+    );
 
     // *  todo : Check Date Criteria
     // ! careful with logic here
@@ -281,26 +297,28 @@ module.exports.apply_company = async (req, res) => {
     console.log("canApply after aggr.CGPA checking:", canApply);
 
     if (canApply) {
-      const application = await Application.create({ jobId: req.body.jobId, studentId: req.student._id });
+      const application = await Application.create({
+        jobId: req.body.jobId,
+        studentId: req.student._id,
+      });
       // student.applications.push({ applicationId: application._id });
       await student.save();
       return res
         .status(201)
-        .json({ success: true, message: "Application created successfully." })
+        .json({ success: true, message: "Application created successfully." });
     } else {
-      return res
-        .status(403)
-        .json({ success: false, message: "You can not apply for this company." })
+      return res.status(403).json({
+        success: false,
+        message: "You can not apply for this company.",
+      });
     }
-  }
-  catch (err) {
+  } catch (err) {
     console.log(err);
     res
       .status(400)
       .json({ success: false, message: "Error while get company list" });
   }
-}
-
+};
 
 // student reset Password
 module.exports.student_reset_password = async (req, res) => {
@@ -454,18 +472,45 @@ module.exports.student_update_password = async (req, res) => {
 module.exports.resume_upload = async (req, res) => {
   upload(req, res, async () => {
     try {
-      const file = await File.create({
-        student_id: req.student._id,
-        company_id: req.params.companyId,
-        file_path: `./uploads/${req.company.name}/${req.filename}.pdf`,
+      const resumeexists = await Resume.find({
+        studentId: req.student._id,
+        companyId: req.company._id,
+        jobId: req.job._id,
       });
-      console.log(file);
-      res.status(201).json({ message: "Resume uploaded Successfully" });
+      console.log(resumeexists);
+      if (resumeexists.length == 0) {
+        const resume = await Resume.create({
+          studentId: req.student._id,
+          companyId: req.company._id,
+          jobId: req.job._id,
+          file_path: `./uploads/${req.company.name}/${req.job.name}/${req.filename}.pdf`,
+        });
+        console.log(resume);
+        res
+          .status(201)
+          .json({
+            success: true,
+            message: "Resume uploaded Successfully",
+            resume,
+          });
+      } else {
+        res.status(201).json({
+          success: true,
+          message: "Resume updated Successfully",
+          resume: resumeexists[0],
+        });
+      }
     } catch (err) {
-      res.status(400).json({ message: err.message });
+      res.status(400).json({ success: false, message: err.message });
       // ** code for resume-upload using student authentication middleware
-      if (fs.existsSync(`./uploads/${req.company.name}/${req.filename}.pdf`)) {
-        fs.unlink(`./uploads/${req.params.companyId}/${req.filename}.pdf`);
+      if (
+        fs.existsSync(
+          `./uploads/${req.company.name}/${req.job.name}/${req.filename}.pdf`
+        )
+      ) {
+        fs.unlink(
+          `./uploads/${req.company.name}/${req.job.name}/${req.filename}.pdf`
+        );
       }
     }
   });

@@ -4,11 +4,7 @@ const jwt = require("jsonwebtoken");
 const Company = require("../models/company");
 const nodeMailer = require("nodemailer");
 const bcrypt = require("bcrypt");
-const File = require("../models/file");
 const crypto = require("crypto");
-const multer = require("multer");
-const fs = require("fs-extra");
-const path = require("path");
 const mongoose = require("mongoose");
 
 // handle error
@@ -54,7 +50,9 @@ module.exports.signup_admin = async (req, res) => {
       maxAge: tokenAge * 1000,
       expires: new Date(Date.now() + 2483000000),
     }); //30 days
-    res.status(201).json({ admin: admin._id, usertype: "admin", token, success: true });
+    res
+      .status(201)
+      .json({ admin: admin._id, usertype: "admin", token, success: true });
   } catch (err) {
     const errors = handleErrors(err);
     res.status(400).json({ errors, success: false });
@@ -463,12 +461,10 @@ module.exports.get_company_round_applied_students = async (req, res) => {
     ]);
     res.status(200).json({ success: true, studentList });
   } catch (err) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Error while getting Applied Students",
-      });
+    res.status(400).json({
+      success: false,
+      message: "Error while getting Applied Students",
+    });
   }
 };
 
@@ -493,12 +489,10 @@ module.exports.get_company_round_qualified_students = async (req, res) => {
     ]);
     res.status(200).json({ success: true, studentList });
   } catch (err) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Error while getting Qualified Students",
-      });
+    res.status(400).json({
+      success: false,
+      message: "Error while getting Qualified Students",
+    });
   }
 };
 
@@ -530,12 +524,10 @@ module.exports.get_company_round_disqualified_students = async (req, res) => {
     ]);
     res.status(200).json({ success: true, studentList });
   } catch (err) {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message: "Error while getting Disqualified Students",
-      });
+    res.status(400).json({
+      success: false,
+      message: "Error while getting Disqualified Students",
+    });
   }
 };
 
