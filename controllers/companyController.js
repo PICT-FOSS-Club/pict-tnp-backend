@@ -90,8 +90,7 @@ module.exports.update_company = async (req, res) => {
 
 // Delete Company
 module.exports.delete_company = async (req, res) => {
-  const { companyId } = req.body;
-
+  const companyId = req.params.id;
   try {
     // Company.findById(companyId).populate({path: 'jobDescriptions'}).exec(function(err, company) {
     //   if(err) {
