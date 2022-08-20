@@ -1,6 +1,8 @@
 const Job = require("../models/job");
 const Company = require("../models/company");
+const Application = require("../models/application");
 const Student = require("../models/student");
+const mongoose = require("mongoose");
 const nodeMailer = require("nodemailer");
 
 // Company Routes --> /company/
@@ -97,7 +99,6 @@ module.exports.add_job = async (req, res) => {
 // Update Company Job
 module.exports.update_job = async (req, res) => {
   const { jobId, job } = req.body;
-
   try {
     // Avoid the changing of companyId and jobResult fields of the Job.
     delete job.companyId, delete job.jobResult;
@@ -138,7 +139,23 @@ module.exports.delete_job = async (req, res) => {
 }
 
 // add company job round
-module.exports.job_round_add = async (req, res) => { }
+module.exports.job_round_add = async (req, res) => {
+  const { jobId, round } = req.body;
+  try{
+    await Job.updateOne({ _id: jobId }, { $inc: { totalRounds: 1 }, $push: { roundDetails: round } });
+    res.status(200).json({
+      success: true,
+      message: "Round Added Successfully."
+    })
+  }
+  catch(err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Adding Company Job Round."
+    });
+  }
+}
 
 // update company job round
 module.exports.job_round_update = async (req, res) => { }
@@ -147,14 +164,36 @@ module.exports.job_round_update = async (req, res) => { }
 module.exports.job_round_delete = async (req, res) => { }
 
 // declare company job round result
-module.exports.job_round_result_declare = async (req, res) => { }
+module.exports.job_round_result_declare = async (req, res) => {
+  const { jobId, roundNo, qaulifiedStudentIds, disqualifiedStudentIds } = req.body;
+  try{
+    const job = await Job.findById(jobId);
+    if(!job){
+      return res.status(200).json({ success: false, message: "Job Not Found" });
+    }
+    job.currentRound = roundNo;
+    // Updating the Qualified Students
+    await Application.updateMany({ jobId: jobId , studentId: { $in: qaulifiedStudentIds } }, { studentRoundCleared: roundNo });
+    // Updating the DisQualified Students
+    await Application.updateMany({ jobId: jobId, studentId: { $in: disqualifiedStudentIds } }, { studentResult: false })
+    if(job.totalRounds === roundNo){
+      (job.ctc > 20) ? (await Student.updateMany({ _id: { $in: qaulifiedStudentIds } }, { "GT20.status": true, "GT20.jobId": jobId })) : (await Student.updateMany({_id: { $in: qaulifiedStudentIds } }, { "LTE20.status": true, "LTE20.jobId": jobId }));
+      job.jobResult = true;
+    }
+    job.save();
+    res.status(200).json({ success: true, message: "Result Declared Successfully" });
+  }
+  catch(err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Updating Company Details."
+    });
+  }
+}
 
 // update company job round result
 module.exports.job_round_result_update = async (req, res) => { }
-
-// delete company job round result
-module.exports.job_round_result_delete = async (req, res) => { }
-
 
 // module.exports.rounds_result = async (req, res) => {
 //   const { companyId, qualifiedStudents } = req.body;
