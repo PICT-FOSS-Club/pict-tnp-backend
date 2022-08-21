@@ -173,8 +173,9 @@ module.exports.apply_company = async (req, res) => {
       { gender: true },
       { sscPercentage: true },
       { endDate: true },
-      { AmcatScore: true },
-      { aggrCgpa: true },
+      { amcatScore: true },
+      { attendance: true },
+      { aggrCgpa: true }
     ]
 
       // * checking course - true for pg
@@ -295,27 +296,27 @@ module.exports.apply_company = async (req, res) => {
     // console.log("canApply after end-date checking:", canApply);
 
     // * checking amcat Criteria
-    // ! note requiredAmcatScore is in job where RequiredAmcatScore was in company
-    if (job.criteria.requiredAmcatScore > student.AmcatScore) {
-      whyNotEligible[5] = { AmcatScore: false }
+    // ! note amcatScore is in job where amcatScore was in company
+    if (job.criteria.amcatScore > student.amcatScore) {
+      whyNotEligible[5] = { amcatScore: false }
       canApply = false;
     }
-    // console.log("canApply after AMCAT checking:", canApply);
 
-    // ! note requiredAttendance is in job where RequiredAttendance was in company
-    // if (job.criteria.requiredAttendance > student.attendance) {
-    //   canApply = false;
-    // }
-    // console.log("canApply after attendance checking:", canApply);
+    // * checking attendance Criteria
+    // ! note attendance is in job where attendance was in company
+    if (job.criteria.attendance > student.attendance) {
+      whyNotEligible[6] = { attendance: false }
+      canApply = false;
+    }
 
-    if (job.criteria.engCgpa > student.aggrCgpa) {
-      whyNotEligible[6] = { aggrCgpa: false }
+    if (job.criteria.aggrCgpa > student.aggrCgpa) {
+      whyNotEligible[7] = { aggrCgpa: false }
       canApply = false;
     }
     // console.log("canApply after aggr.CGPA checking:", canApply);
 
     if (canApply) {
-      const application = await Application.create({
+      await Application.create({
         jobId: req.body.jobId,
         studentId: req.student._id,
       });

@@ -44,14 +44,17 @@ const jobSchema = new mongoose.Schema(
         female: { type: Boolean },
         both: { type: Boolean },
       },
-      engCgpa: {
+      aggrCgpa: {
         type: Number,
+        default: 0
       },
       sscPercentage: {
         type: Number,
+        default: 0
       },
       hscPercentage: {
         type: Number,
+        default: 0
       },
       activeBacklog: {
         type: Number,

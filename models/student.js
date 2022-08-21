@@ -171,8 +171,8 @@ const studentSchema = new mongoose.Schema(
       type: String,
     },
 
-    // collage  details
-
+    // college  details
+    
     yearOfStartingCollege: {
       type: Number,
       required: true,
