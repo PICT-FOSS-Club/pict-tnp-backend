@@ -116,7 +116,8 @@ const jobSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-jobSchema.virtual("getCompany", {
+// * This virtual will make relation between Application and Job
+jobSchema.virtual("company", {
   ref: "Company",
   localField: "companyId",
   foreignField: "_id",
