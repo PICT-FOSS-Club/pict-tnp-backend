@@ -584,7 +584,7 @@ module.exports.get_applied_jobs = async (req, res) => {
   }
 }
 
-module.exports.student_application_delete = async (req, res) => {
+module.exports.delete_application = async (req, res) => {
   try {
     const applicationId = req.params.applicationId;
 
