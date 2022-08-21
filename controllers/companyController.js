@@ -336,7 +336,7 @@ module.exports.job_round_result_declare = async (req, res) => {
       if (qualStudents.length != 0) {
         await transporter.sendMail({
           from: process.env.SMTP_SERVICE,
-          to: qualStudents,
+          bcc: qualStudents,
           subject: 'Qualification of Rounds',
           html: qualMessage
         }, async (error, data) => {
@@ -352,7 +352,7 @@ module.exports.job_round_result_declare = async (req, res) => {
 
               await transporter.sendMail({
                 from: process.env.SMTP_SERVICE,
-                to: disqualStudents,
+                bcc: disqualStudents,
                 subject: 'Qualification of Rounds',
                 html: disqualMessage
               }, (error, data) => {
