@@ -23,8 +23,8 @@ const adminSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpire: Date,
     resetPasswordTokenForForgotPassword: String,
-  }, 
-  {timestamps: true}
+  },
+  { timestamps: true }
 );
 
 // before saving to db hashing of ppassword
@@ -47,14 +47,14 @@ adminSchema.statics.login = async function (email, password) {
   throw Error("Incorrect Email");
 };
 
-adminSchema.methods.generateAuthToken = async function (){
+adminSchema.methods.generateAuthToken = async function () {
   try {
-    let tokenGen = jwt.sign({_id: this._id}, process.env.JWT_SECRET);
+    let tokenGen = await jwt.sign({ _id: this._id }, process.env.JWT_SECRET);
     return tokenGen;
   } catch (err) {
-    console.log('err in generateAuthToken admin',err)
+    console.log("err in generateAuthToken admin", err);
   }
-}
+};
 
 const Admin = mongoose.model("admin", adminSchema);
 

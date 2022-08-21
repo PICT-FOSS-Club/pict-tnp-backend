@@ -15,56 +15,81 @@ const nodeMailer = require("nodemailer");
 let upload = multer({
   storage: multer.diskStorage({
     destination: async (req, file, cb) => {
-      let path = `./uploads/trial/files`;
+      let companyId = req.params.companyId;
+      let company = await Company.findById(companyId);
+      console.log(company);
+      if (!company) {
+        throw Error("Company Not Found");
+      }
+      req.company = company;
+      console.log(2, req.company);
+      let path = `./uploads/${company.name}/files`;
       if (!fs.existsSync(path)) {
         fs.mkdirSync(path, { recursive: true });
       }
+      console.log(path);
       cb(null, path);
     },
     filename: async (req, file, cb) => {
-      cb(null, "trial" + path.extname(file.originalname));
+      cb(null, req.company.name + path.extname(file.originalname));
     },
   }),
 }).single("company-file");
 
 // Add Company
 module.exports.add_company = async (req, res) => {
+  const company = req.body;
+  try {
+    await Company.create(company);
+    res
+      .status(201)
+      .json({ success: true, message: "Company Drive Added Successfully." });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      errors: err,
+      message: "Error while applying company drive.",
+    });
+  }
+};
+
+// Upload Company Files
+module.exports.upload_company_files = async (req, res) => {
   upload(req, res, async () => {
     try {
-      const company = await Company.create(JSON.parse(req.body.company));
-      req.company = company;
-      let oldPath = `./uploads/trial/files/trial.pdf`;
-      let newPath = `./uploads/${company.name}/files/${company.name}.pdf`;
-
-      mv(oldPath, newPath, { mkdirp: true }, async function (err) {
-        if (err) {
-          const co = await Company.deleteOne({ _id: company._id });
-          res
-            .status(400)
-            .json({ success: false, message: "Something Went Wrong!" });
-        }
+      const company = await Company.findById(req.params.companyId);
+      const companyFileExists = await CompanyFile.findOne({
+        companyId: req.params.companyId,
       });
-      const companyFile = await CompanyFile.create({
-        companyId: company._id,
-        path: `./uploads/${company.name}/file/${company.name}.pdf`,
-      });
-      req.companyFile = companyFile;
-      res.status(201).json({
-        success: true,
-        message: "Company Details Added Successfully.",
-        company,
-        companyFile,
-      });
-    } catch (err) {
-      const co = await Company.deleteOne({ _id: company._id });
-      if (
-        fs.existsSync(
-          `./uploads/${req.company.name}/file/${req.company.name}.pdf`
-        )
-      ) {
-        fs.unlink(`./uploads/${req.company.name}/file/${req.company.name}.pdf`);
+      if (!companyFileExists) {
+        let companyFileDetails = await CompanyFile.create({
+          companyId: company._id,
+          path: `./uploads/${company.name}/files/${company.name}.pdf`,
+        });
+        res.status(200).json({
+          success: true,
+          message: "Company file uploaded Successfully",
+          companyFile: companyFileDetails,
+        });
+      } else {
+        res.status(200).json({
+          success: true,
+          message: "Company file updated Successfully",
+          companyFile: companyFileExists,
+        });
       }
-      res.status(400).json({ success: false, message: err.message });
+    } catch (err) {
+      console.log(err);
+      res.status(404).json({ success: false, message: err.message });
+      // if (
+      //   fs.existsSync(
+      //     `./uploads/${req.company.name}/files/${req.company.name}.pdf`
+      //   )
+      // ) {
+      //   fs.unlink(
+      //     `./uploads/${req.company.name}/files/${req.company.name}.pdf`
+      //   );
+      // }
     }
   });
 };
@@ -237,12 +262,26 @@ module.exports.job_round_delete = async (req, res) => {};
 
 // declare company job round result
 module.exports.job_round_result_declare = async (req, res) => {
-  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } = req.body;
+  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } =
+    req.body;
+
+  const transporter = nodeMailer.createTransport({
+    service: process.env.SMTP_SERVICE,
+    auth: {
+      user: process.env.SMTP_MAIL,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+
+  let qualStudents = [],
+    disqualStudents = [];
+
   try {
     const job = await Job.findById(jobId);
     if (!job) {
       return res.status(200).json({ success: false, message: "Job Not Found" });
     }
+    const company = await Company.findById(job.companyId);
     job.currentRound = roundNo;
     // Updating the Qualified Students
     if (qualifiedStudentIds.length) {
@@ -258,10 +297,42 @@ module.exports.job_round_result_declare = async (req, res) => {
         { studentResult: false }
       );
     }
-    if (job.totalRounds === roundNo) {
-      if(job.ctc > 20){
-        const previousLTE20PlacedStudents = await Student.find({ _id: { $in : qualifiedStudentIds }, "LTE20.status": true }, { _id: true });
-        const previousLTE20PlacedStudentIds = previousLTE20PlacedStudents.map(student => student._id );
+    // finding emails of qualified students
+    const qualStudentsEmailList = await Student.find(
+      { _id: { $in: qualifiedStudentIds } },
+      { email: true }
+    );
+    console.log("qualStudentsEmailList", qualStudentsEmailList);
+    qualStudents = qualStudentsEmailList.map((student) => student.email);
+    console.log("qualStudents", qualStudents);
+
+    // finding emails of disqualified students
+    const disqualStudentsEmailList = await Student.find(
+      { _id: { $in: disqualifiedStudentIds } },
+      { email: true }
+    );
+    console.log("disqualStudentsEmailList", disqualStudentsEmailList);
+    disqualStudents = disqualStudentsEmailList.map((student) => student.email);
+    console.log("disqualStudents", disqualStudents);
+
+    let qualMessage = `Your are qualified for ${roundNo + 1} round of ${
+      company.name
+    }.`;
+    let disqualMessage = `Your are Disqualified for ${roundNo + 1} round of ${
+      company.name
+    }.`;
+
+    if (job.totalRounds == roundNo) {
+      qualMessage = `\nCongratulations you are placed in ${company.name}!😍😍😍.`;
+      if (job.ctc > 20) {
+        // * here previousLTE20PlacedStudents contains only _id's as _id:true is an object, to convert it into array use map function
+        const previousLTE20PlacedStudents = await Student.find(
+          { _id: { $in: qualifiedStudentIds }, "LTE20.status": true },
+          { _id: true }
+        );
+        const previousLTE20PlacedStudentIds = previousLTE20PlacedStudents.map(
+          (student) => student._id
+        );
         await Application.updateMany(
           { jobId: jobId, studentId: { $in: previousLTE20PlacedStudentIds } },
           { studentResult: false }
@@ -270,8 +341,7 @@ module.exports.job_round_result_declare = async (req, res) => {
           { _id: { $in: qualifiedStudentIds } },
           { "GT20.status": true, "GT20.jobId": jobId }
         );
-      }
-      else {
+      } else {
         await Student.updateMany(
           { _id: { $in: qualifiedStudentIds } },
           { "LTE20.status": true, "LTE20.jobId": jobId }
@@ -280,10 +350,100 @@ module.exports.job_round_result_declare = async (req, res) => {
       job.jobResult = true;
     }
     job.save();
-    res
-      .status(200)
-      .json({ success: true, message: "Result Declared Successfully" });
+
+    // now sending mail to qualified Students
+    try {
+      let info = await transporter.sendMail({
+        from: process.env.SMTP_SERVICE,
+        bcc: qualStudents,
+        subject: "Qualification of Rounds",
+        html: qualMessage,
+      });
+      res.status(200).json({
+        success: true,
+        message: `Email send to ${qualStudents} successfully`,
+      });
+      if (qualStudents.length != 0) {
+        await transporter.sendMail(
+          {
+            from: process.env.SMTP_SERVICE,
+            bcc: qualStudents,
+            subject: "Qualification of Rounds",
+            html: qualMessage,
+          },
+          async (error, data) => {
+            if (error) {
+              console.log(error);
+              res.status(500).json({ message: "ERROR SENDING MAIL !!!" });
+            } else {
+              // console.log("Sent! ", data.response, " messageId: ", data.messageId);
+              // res.status(200).json({ message: 'NOTIFICATION MAIL SENT !!!' });
+
+              if (disqualStudents.length != 0) {
+                await transporter.sendMail(
+                  {
+                    from: process.env.SMTP_SERVICE,
+                    bcc: disqualStudents,
+                    subject: "Qualification of Rounds",
+                    html: disqualMessage,
+                  },
+                  (error, data) => {
+                    if (error) {
+                      console.log(error);
+                      res
+                        .status(500)
+                        .json({ message: "ERROR SENDING MAIL !!!" });
+                    } else {
+                      console.log(
+                        "Sent!",
+                        data.response,
+                        " messageId: ",
+                        data.messageId
+                      );
+                      res
+                        .status(200)
+                        .json({ message: "NOTIFICATION MAIL SENT !!!" });
+                    }
+                  }
+                );
+              }
+            }
+          }
+        );
+      } else {
+        // all students disqualified
+        await transporter.sendMail(
+          {
+            from: process.env.SMTP_SERVICE,
+            to: disqualStudents,
+            subject: "Qualification of Rounds",
+            html: disqualMessage,
+          },
+          async (error, data) => {
+            if (error) {
+              console.log(error);
+              res.status(500).json({ message: "ERROR SENDING MAIL !!!" });
+            } else {
+              console.log(
+                "Sent!",
+                data.response,
+                " messageId: ",
+                data.messageId
+              );
+              res.status(200).json({ message: "NOTIFICATION MAIL SENT !!!" });
+            }
+          }
+        );
+      }
+
+      // console.log("Message sent: %s", info.messageId);
+    } catch (err) {
+      console.log("err in rounds_result", err);
+    }
+
+    // res.status(200).json({ success: true, message: "Result Declared Successfully" });
   } catch (err) {
+    console.log(err);
     res.status(400).json({
       success: false,
       error: err,
