@@ -20,6 +20,9 @@ router.get(
   studentController.drive_compaines
 );
 
+// get applied jobs list
+router.get("/student/job/applied",authStudent, studentController.applied_job_list)
+
 // company details,
 router.get(
   "/student/company/details/:companyId",
