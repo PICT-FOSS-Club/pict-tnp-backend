@@ -63,4 +63,6 @@ router.post(
   studentController.resume_upload
 );
 
+router.get("/student/job/applied", authStudent, studentController.get_applied_jobs);
+
 module.exports = router;

@@ -567,3 +567,18 @@ module.exports.company_details = async (req, res) => {
     res.status(400).json({ errors: err, success: false });
   }
 };
+
+module.exports.get_applied_jobs = async (req, res) => {
+  try{
+    const student = await Student.findById(req.student._id).populate("applications").exec(async function(err, student){
+      if(err){
+        return res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
+      }
+      
+    });
+    res.status(200).json({ success: true, data, message: "Applied Jobs"})
+  }
+  catch(err){
+    res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
+  }
+}
