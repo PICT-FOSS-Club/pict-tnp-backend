@@ -47,11 +47,9 @@ module.exports.signup_admin = async (req, res) => {
 
   try {
     const admin = await Admin.create({ email, password });
-    const token = await admin.generateAuthToken();
-    res.cookie("token", token, { httpOnly: true, maxAge: maxAge * 1000 }); //30 days
-    res
-      .status(201)
-      .json({ admin: admin._id, usertype: "admin", token, success: true });
+    const token = createToken(admin._id);
+    res.cookie("token", token, { httpOnly: true, maxAge: maxAge * 1000 }); //3 days
+    res.status(201).json({ admin, usertype: "admin", token, success: true });
   } catch (err) {
     const error = handleErrors(err);
     res.status(400).json({ error, success: false });
@@ -62,8 +60,9 @@ module.exports.signup_admin = async (req, res) => {
 module.exports.login_admin = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const admin = await Admin.login(email, password);
+    let admin = await Admin.login(email, password);
     const token = createToken(admin._id);
+    admin = await Admin.findById(admin);
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: maxAge * 1000,

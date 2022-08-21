@@ -47,29 +47,28 @@ const jobSchema = new mongoose.Schema(
       engCgpa: {
         type: Number,
       },
-      requiredAmcatScore: {
-        type: Number,
-        default: 0,
-      },
-      requiredAttendance: {
-        type: Number,
-        default: 0,
-      },
       sscPercentage: {
         type: Number,
       },
       hscPercentage: {
         type: Number,
       },
-      yearGap: {
-        type: Number
-      },
       activeBacklog: {
-        type: Number
+        type: Number,
+        default: 0
       },
       passiveBacklog: {
-        type: Number
-      }
+        type: Number,
+        default: 0
+      },
+      amcatScore: {
+        type: Number,
+        default: 0,
+      },
+      attendance: {
+        type: Number,
+        default: 0,
+      },
     },
     skillsRequired: [{
       skill: {

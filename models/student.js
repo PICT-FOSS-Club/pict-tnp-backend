@@ -243,8 +243,7 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    // Amcat details
-    AmcatScore: {
+    amcatScore: {
       type: Number,
       default: 0,
     },
