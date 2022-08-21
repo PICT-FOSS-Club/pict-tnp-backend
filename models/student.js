@@ -307,6 +307,7 @@ studentSchema.pre("save", async function (next) {
   next();
 });
 
+// login student
 studentSchema.statics.login = async function (email, password) {
   const student = await this.findOne({ email });
   if (student) {
@@ -314,20 +315,9 @@ studentSchema.statics.login = async function (email, password) {
     if (auth) {
       return student;
     }
-    throw new Error("Incorrect Password");
+    throw Error("Incorrect Password");
   }
-  throw new Error("Incorrect Email");
-};
-
-studentSchema.methods.generateAuthToken = async function () {
-  try {
-    let tokenGen = jwt.sign({ _id: this._id }, process.env.JWT_SECRET);
-    // this.tokens = this.tokens.concat({ token : tokenGen });
-    // await this.save();
-    return tokenGen;
-  } catch (err) {
-    console.log("err in generateAuthToken", err);
-  }
+  throw Error("Incorrect Email");
 };
 
 module.exports.validate = (student) => {

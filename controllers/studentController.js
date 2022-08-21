@@ -10,6 +10,8 @@ const nodeMailer = require("nodemailer");
 const multer = require("multer");
 const fs = require("fs-extra");
 const path = require("path");
+const { createToken } = require("../utils/createToken");
+const maxAge = 3 * 24 * 60 * 60;
 
 let upload = multer({
   storage: multer.diskStorage({
@@ -49,31 +51,30 @@ let upload = multer({
   }),
 }).single("resume");
 
+// handle error
 const handleErrors = (err) => {
-  let errors = { name: "", phone: "", email: "", password: "" };
+  let errors = { email: "", password: "" };
 
   // incorrect email
   if (err.message === "Incorrect Email") {
-    errors.email = "This email is not registered";
+    errors.email = "Email is not Registered";
   }
-
   // incorrect password
   if (err.message === "Incorrect Password") {
-    errors.password = "This password is not registered";
+    errors.password = "Wrong password";
   }
 
   // duplicate error code
   if (err.code == 11000) {
-    errors.email = "that email existed earlier";
+    errors.email = "This Email is already Registered";
   }
 
-  // validation errors
-  if (err.message.includes("Student validation failed")) {
+  // validation Eroor
+  if (err.message.includes("User validation failed")) {
     Object.values(err.errors).forEach(({ properties }) => {
       errors[properties.path] = properties.message;
     });
   }
-
   return errors;
 };
 
@@ -83,32 +84,16 @@ const tokenAge = parseInt(process.env.JWT_AGE);
 module.exports.login_student = async (req, res) => {
   const { email, password } = req.body;
   try {
-    let token;
-    // const student = await Student.login(email, password);
-    const student = await Student.findOne({ email: email }).populate({
-      path: "applications",
-    });
-    if (student) {
-      const isMatch = await bcrypt.compare(password, student.password);
-      // token = createToken(student._id);
-      token = await student.generateAuthToken();
-      const usertype = "student";
-      if (isMatch) {
-        res.cookie("token", token, {
-          httpOnly: true,
-          maxAge: tokenAge * 1000,
-          expires: new Date(Date.now() + 2483000000),
-        }); //30 days expiry
-        res.status(200).send({ student, token, success: true });
-      } else {
-        res.status(400).json({ error: "invalid creds" });
-      }
-    } else {
-      res.status(400).json({ error: "invalid creds" });
-    }
+    const student = await Student.login(email, password);
+    const token = createToken(student._id);
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: maxAge * 1000,
+    }); // 3 days
+    res.status(200).json({ student, usertype: "student", token, success: true });
   } catch (err) {
-    const errors = handleErrors(err);
-    res.status(400).json({ errors, success: false });
+    const error = handleErrors(err);
+    res.status(400).json({ success: false, error: error });
   }
 };
 

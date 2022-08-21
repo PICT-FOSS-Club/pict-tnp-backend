@@ -10,23 +10,23 @@ const Job = require("../models/job");
 const Application = require("../models/application");
 const { createToken } = require("../utils/createToken");
 const maxAge = 3 * 24 * 60 * 60;
+
 // handle error
 const handleErrors = (err) => {
-  console.log(err.message, err.code);
   let errors = { email: "", password: "" };
 
   // incorrect email
   if (err.message === "Incorrect Email") {
-    errors.email = "Entered Email do not exists";
+    errors.email = "Email is not Registered";
   }
   // incorrect password
   if (err.message === "Incorrect Password") {
-    errors.password = "that password is incorrect";
+    errors.password = "Wrong password";
   }
 
   // duplicate error code
   if (err.code == 11000) {
-    errors.email = "that email existed earlier";
+    errors.email = "This Email is already Registered";
   }
 
   // validation Eroor
@@ -53,8 +53,8 @@ module.exports.signup_admin = async (req, res) => {
       .status(201)
       .json({ admin: admin._id, usertype: "admin", token, success: true });
   } catch (err) {
-    const errors = handleErrors(err);
-    res.status(400).json({ errors, success: false });
+    const error = handleErrors(err);
+    res.status(400).json({ error, success: false });
   }
 };
 
@@ -67,11 +67,11 @@ module.exports.login_admin = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: maxAge * 1000,
-    }); // 30 days
-    res.status(200).json({ admin, usertype: "ad", token, success: true });
+    }); // 3 days
+    res.status(200).json({ admin, usertype: "admin", token, success: true });
   } catch (err) {
-    const errors = handleErrors(err);
-    res.status(400).json({ errors });
+    const error = handleErrors(err);
+    res.status(400).json({ error, success: false });
   }
 };
 
