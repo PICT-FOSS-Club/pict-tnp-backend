@@ -151,15 +151,10 @@ module.exports.delete_company = async (req, res) => {
 // get Company Job
 module.exports.get_job = async (req, res) => {
   try {
-    let job = await Job.findById(req.params.jobId);
+    let job = await Job.findById(req.params.jobId).populate('getCompany')
     if(!job){
       return res.status(404).json({succss: false, message:"Job not found"})
     }
-    let company = await Company.find(job.companyId);
-    if(!company){
-      return res.status(404).json({succss: false, message:"Company not found"})
-    }
-    job += company;
     res.status(200).json({
       success: true,
       data: job,
@@ -174,6 +169,7 @@ module.exports.get_job = async (req, res) => {
 // Add Company Job
 module.exports.add_job = async (req, res) => {
   try {
+    console.log(req.body)
     await Job.create(req.body);
 
     const company = await Company.findById(req.body.companyId).populate({

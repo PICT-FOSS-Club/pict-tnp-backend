@@ -108,8 +108,8 @@ module.exports.logout_student = (req, res) => {
 // student profile
 module.exports.student_profile = async (req, res) => {
   try {
-    console.log(req.studentId);
-    const student = await Student.findById(req.studentId).populate({
+    // console.log(req.student._id);
+    const student = await Student.findById(req.student._id).populate({
       path: "applications",
     });
     if(!student){
