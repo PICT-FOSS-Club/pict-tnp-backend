@@ -26,11 +26,11 @@ const applicationSchema = new mongoose.Schema(
 );
 
 // * This virtual will make relation between Application and Job
-// applicationSchema.virtual('job', {
-//     ref: "Job",
-//     localField: "jobId",
-//     foreignField: "_id"
-// });
+applicationSchema.virtual('job', {
+    ref: "Job",
+    localField: "jobId",
+    foreignField: "_id"
+});
 
 // *  We can get the student of this Application using Populate as follows:
 // ! const application = await Application.find().populate({path: 'student'});

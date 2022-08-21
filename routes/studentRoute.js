@@ -63,6 +63,10 @@ router.post(
   studentController.resume_upload
 );
 
+// get applied jobs details
 router.get("/student/job/applied", authStudent, studentController.get_applied_jobs);
+
+// delete application
+router.delete("/student/application/delete/:applicationId", authStudent, adminController.delete_application);
 
 module.exports = router;

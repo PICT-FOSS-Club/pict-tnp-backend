@@ -570,15 +570,43 @@ module.exports.company_details = async (req, res) => {
 
 module.exports.get_applied_jobs = async (req, res) => {
   try{
-    const student = await Student.findById(req.student._id).populate("applications").exec(async function(err, student){
+    Student.findById(req.student._id).populate("applications").exec(async function(err, student){
       if(err){
         return res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
       }
-      
+      const applicationIds = student.applications.map((application) => application._id.toString());
+      const applications = await Application.find({ _id: { $in: applicationIds } }).populate({ path: 'job', populate: { path: 'company'} });
+      res.status(200).json({ success: true, data: applications, message: "Applied Jobs"})
     });
-    res.status(200).json({ success: true, data, message: "Applied Jobs"})
   }
   catch(err){
     res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
+  }
+}
+
+module.exports.delete_application = async (req, res) => {
+  try {
+    const applicationId = req.params.applicationId;
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    await application.remove();
+
+    res.status(200).json({
+      success: true,
+      message: "Application Deleted Successfully.",
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Deleting Application.",
+    });
   }
 }

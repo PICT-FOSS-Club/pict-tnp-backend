@@ -340,23 +340,23 @@ module.exports.register_students = async (req, res) => {
     // console.log('err in last clasuse', err)
   }
 };
-
-module.exports.get_company = async (req, res) => {
+// get Company Job
+module.exports.get_job = async (req, res) => {
   try {
-    const company = await Company.findById(req.params.companyId);
-    if (!company) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Company Not Found" });
+    let job = await Job.findById(req.params.jobId).populate("company");
+    if(!job){
+      return res.status(404).json({succss: false, message:"Job not found"})
     }
-
-    return res
-      .status(200)
-      .json({ success: true, message: "Company Found", data: company });
+    res.status(200).json({
+      success: true,
+      data: job,
+      message: "Job & Company found"
+    })
   } catch (err) {
-    res.status(400).json({ errors: err, success: false });
+    console.log(err);
+    res.status(404).json({succss: false, message:"Job not found"})
   }
-};
+}
 
 module.exports.get_company_jobs = async (req, res) => {
   try {
@@ -559,23 +559,6 @@ module.exports.get_job_round_disqualified_students = async (req, res) => {
 //Generate placed student Report list,excel:
 
 module.exports.get_placed_students = async (req, res) => {
-  // const dept = req.query.Dept;
-
-  // let students;
-  // if (dept == "all") {
-  //   students = await Student.find({ $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }]});
-  // } else {
-  //   // students = await Student.find({ branch: { $eq: dept } });
-  //   students = await Student.find(
-  //     {
-  //       $and: [
-  //         { branch: { $eq: dept } },
-  //         { $or: [{ isLTE20: { $eq: true } }, { isGT20: { $eq: true } }] }
-  //       ]
-  //     }
-  //   );
-  // }
-
   let students = await Student.find({
     $or: [{ "LTE20.status": { $eq: true } }, { "GT20.status": { $eq: true } }],
   });
@@ -596,7 +579,7 @@ module.exports.generate_report = async (req, res) => {
   try {
     const reportArr = [];
 
-    let jobs = await Job.find().populate("getCompany");
+    let jobs = await Job.find().populate("company");
 
     for (let i = 0; i < jobs.length; i++) {
       let job = jobs[i];
@@ -876,13 +859,12 @@ module.exports.generate_report = async (req, res) => {
       // console.log(JSON.stringify(totalAppliedForJob))
 
 
+
     
     }
-
-
     // console.log(obj)
     res.send({ success: true, data: reportArr, message:"Placement Report Generated" });
-  } catch (err) {
+  }catch (err) {
     console.log("Error in generating report:", err);
   }
 };
@@ -906,10 +888,10 @@ module.exports.student_application_delete = async (req, res) => {
       message: "Application Deleted Successfully.",
     });
   } catch (err) {
-    console.log("err in outermost try catch", err);
     res.status(400).json({
       success: false,
+      error: err,
       message: "Error while Deleting Application.",
     });
   }
-};
+}
