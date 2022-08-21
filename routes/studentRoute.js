@@ -65,4 +65,7 @@ router.post(
 
 router.get("/student/job/applied", authStudent, studentController.get_applied_jobs);
 
+// delete application of a student
+router.delete("/student/application/delete/:applicationId", authStudent, adminController.delete_application);
+
 module.exports = router;

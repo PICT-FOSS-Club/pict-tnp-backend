@@ -583,3 +583,30 @@ module.exports.get_applied_jobs = async (req, res) => {
     res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
   }
 }
+
+module.exports.student_application_delete = async (req, res) => {
+  try {
+    const applicationId = req.params.applicationId;
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    await application.remove();
+
+    res.status(200).json({
+      success: true,
+      message: "Application Deleted Successfully.",
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Deleting Application.",
+    });
+  }
+}
