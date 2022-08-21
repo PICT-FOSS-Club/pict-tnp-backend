@@ -393,7 +393,7 @@ module.exports.get_company_jobs = async (req, res) => {
 
 module.exports.get_student = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.studentId);
+    const student = await Student.findById(req.params.studentId).populate("applications");
     if (!student) {
       return res
         .status(400)

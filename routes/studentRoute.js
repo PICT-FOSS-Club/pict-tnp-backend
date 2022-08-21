@@ -24,7 +24,7 @@ router.get(
 router.get(
   "/student/company/details/:companyId",
   authStudent,
-  studentController.company_detials
+  studentController.company_details
 );
 
 // studentApplyForCompanies later - companyid take from req.body._id

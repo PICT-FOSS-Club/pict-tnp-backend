@@ -546,7 +546,7 @@ module.exports.resume_upload = async (req, res) => {
   });
 };
 
-module.exports.company_detials = async (req, res) => {
+module.exports.company_details = async (req, res) => {
   try {
     const company = await Company.findById(req.params.companyId);
     if (!company) {

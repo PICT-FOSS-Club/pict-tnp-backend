@@ -237,8 +237,7 @@ module.exports.job_round_delete = async (req, res) => {};
 
 // declare company job round result
 module.exports.job_round_result_declare = async (req, res) => {
-  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } =
-    req.body;
+  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } = req.body;
   try {
     const job = await Job.findById(jobId);
     if (!job) {
@@ -294,7 +293,46 @@ module.exports.job_round_result_declare = async (req, res) => {
 };
 
 // update company job round result
-module.exports.job_round_result_update = async (req, res) => {};
+module.exports.job_round_result_update = async (req, res) => {
+  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } = req.body;
+  try{
+    const job = await Job.findById(jobId);
+    const totalRoundNo = job.totalRounds, currentRoundNo = job.currentRound, updateRoundNo = roundNo;
+    if (!job) {
+      return res.status(200).json({ success: false, message: "Job Not Found" });
+    }
+    if(totalRoundNo == currentRoundNo){
+      if(currentRoundNo == updateRoundNo){}
+      else if(currentRoundNo > updateRoundNo){}
+    }
+    else if(totalRoundNo > currentRoundNo){
+      if(currentRoundNo == updateRoundNo){}
+      else if(currentRoundNo > updateRoundNo){
+        // Updating the Qualified Students
+        if (qualifiedStudentIds.length) {
+          await Application.updateMany(
+            { jobId: jobId, studentId: { $in: qualifiedStudentIds } },
+            { $max: { studentRoundCleared: updateRoundNo }, studentResult: true }
+          );
+        }
+        // Updating the DisQualified Students
+        if (disqualifiedStudentIds.length) {
+          await Application.updateMany(
+            { jobId: jobId, studentId: { $in: disqualifiedStudentIds } },
+            { studentRoundCleared: updateRoundNo-1, studentResult: false }
+          );
+        }
+      }
+    }
+  }
+  catch(err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Updating Company Details.",
+    });
+  }
+};
 
 // module.exports.rounds_result = async (req, res) => {
 //   const { companyId, qualifiedStudents } = req.body;

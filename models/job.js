@@ -29,11 +29,6 @@ const jobSchema = new mongoose.Schema(
       required: [true, "Enter End date for Applying"],
     },
     criteria: {
-      //   branch: {
-      //     cs: { type: Boolean },
-      //     it: { type: Boolean },
-      //     entc: { type: Boolean },
-      //   },
       ug: {
         cs: { type: Boolean },
         it: { type: Boolean },
@@ -66,12 +61,21 @@ const jobSchema = new mongoose.Schema(
       hscPercentage: {
         type: Number,
       },
-      //   courseName: {
-      //     ug: { type: Boolean },
-      //     pg: { type: Boolean },
-      //   },
+      yearGap: {
+        type: Number
+      },
+      activeBacklog: {
+        type: Number
+      },
+      passiveBacklog: {
+        type: Number
+      }
     },
-    skillsRequired: [],
+    skillsRequired: [{
+      skill: {
+        type: String
+      }
+    }],
     roundDetails: [
       {
         _id: false,
