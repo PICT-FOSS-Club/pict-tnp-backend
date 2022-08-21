@@ -24,6 +24,9 @@ router.delete(
   companyController.delete_company
 );
 
+// get company job
+router.get("/company/job/details/:jobId", authAdmin, companyController.get_job);
+
 // add company job
 router.post("/company/job/add", authAdmin, companyController.add_job);
 

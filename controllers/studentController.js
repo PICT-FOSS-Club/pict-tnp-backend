@@ -108,9 +108,13 @@ module.exports.logout_student = (req, res) => {
 // student profile
 module.exports.student_profile = async (req, res) => {
   try {
-    const student = await Student.findById(req.student._id).populate({
+    console.log(req.studentId);
+    const student = await Student.findById(req.studentId).populate({
       path: "applications",
     });
+    if(!student){
+      return res.status(400).json({ success: false, message: "Student not found" });
+    }
     res.status(200).json({ student, success: true });
   } catch {
     res.status(400).json({ success: false, message: "Login or Signup" });
@@ -337,6 +341,21 @@ module.exports.apply_company = async (req, res) => {
       .json({ success: false, message: "Error while get company list" });
   }
 };
+
+// get applied jobs list
+module.exports.applied_job_list = async (req, res) => {
+  try {
+  const student = await Student.findById(req.student._id).populate("applications")
+  // if(!student){
+  //   return res.status(200).json({success:true,data:[], message:"Student did not applied to any companies" })
+  // }
+  console.log(student);
+  
+  } catch (err) {
+  res.status(404).json({success:false, message: "Student not found"})    
+  }
+
+}
 
 // student reset Password
 module.exports.student_reset_password = async (req, res) => {
