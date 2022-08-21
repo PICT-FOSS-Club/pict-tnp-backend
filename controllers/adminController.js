@@ -407,37 +407,61 @@ module.exports.get_all_students = async (req, res) => {
 
 module.exports.get_dashboard_details = async (req, res) => {
   try {
-    const companyList = await Company.find();
-    const jobList = await Job.find();
-    console.log("joblist", jobList);
     const dashboard_details = {
-      totalStudents: (await Student.find()).length,
-      placedStudents: (
-        await Student.find({
-          $or: [
-            { "LTE20.status": { $eq: true } },
-            { "GT20.status": { $eq: true } },
-          ],
-        })
-      ).length,
+      totalStudents: 0,
+      csPlacedStudents: 0,
+      itPlacedStudents: 0,
+      entcPlacedStudents: 0,
+      totalCompanies: 0,
+      placedStudents: 0,
       unplacedStudents: 0,
-      totalCompanies: companyList.length,
-      averageCTC: 0,
     };
 
-    dashboard_details.unplacedStudents =
-      dashboard_details.totalStudents - dashboard_details.placedStudents;
+    dashboard_details.totalStudents = (await Student.find()).length;
+    dashboard_details.totalCompanies = (await Company.find()).length;
+    dashboard_details.csPlacedStudents = (await Student.find({ 
+      $and: [ 
+        { 
+          branch:  { $eq: "cs" } 
+        },
+        {$or: 
+          [
+            { "LTE20.status": { $eq: true} },
+            { "GT20.status": { $eq: true} },
+          ]
+        }
+      ]
+    })).length;
 
-    let sumOfCTC = 0;
-    // * do not use parseInt here as it will give only integer values not decimal values
-    // for (const company of companyList) {
-    //   sumOfCTC += company.ctc;
-    // }
-    for (const job of jobList) {
-      sumOfCTC += job.ctc;
-    }
-    console.log("sumOfCTC: ", sumOfCTC);
-    dashboard_details.averageCTC = sumOfCTC / companyList.length;
+    dashboard_details.itPlacedStudents = (await Student.find({ 
+      $and: [ 
+        { 
+          branch:  { $eq: "it" } 
+        },
+        {$or: 
+          [
+            { "LTE20.status": { $eq: true} },
+            { "GT20.status": { $eq: true} },
+          ]
+        }
+      ]
+    })).length;
+
+    dashboard_details.entcPlacedStudents = (await Student.find({ 
+      $and: [ 
+        { 
+          branch:  { $eq: "entc" } 
+        },
+        {$or: 
+          [
+            { "LTE20.status": { $eq: true} },
+            { "GT20.status": { $eq: true} },
+          ]
+        }
+      ]
+    })).length;
+    dashboard_details.placedStudents = (dashboard_details.csPlacedStudents + dashboard_details.itPlacedStudents + dashboard_details.entcPlacedStudents);
+    dashboard_details.unplacedStudents = dashboard_details.totalStudents - dashboard_details.placedStudents;
     res.status(200).json({ success: true, dashboard_details });
   } catch (err) {
     res.status(400).json({ errors: err, success: false });
