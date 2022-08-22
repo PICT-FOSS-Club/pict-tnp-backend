@@ -2,7 +2,6 @@ const jwt = require("jsonwebtoken");
 const Student = require("../models/student");
 
 const authStudent = async (req, res, next) => {
-
     const token = req.cookies.token;
     if (token) {
         jwt.verify(token, process.env.JWT_SECRET, async (err, decodedToken) => {
@@ -19,8 +18,7 @@ const authStudent = async (req, res, next) => {
     } else {
         let AuthError = { error: "Student is not authenticated!" };
         res.status(401).send({ AuthError });
-
     }
-}
+};
 
 module.exports = authStudent;

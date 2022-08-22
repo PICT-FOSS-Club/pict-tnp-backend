@@ -29,7 +29,7 @@ router.post("/admin/register/student", authAdmin, adminController.register_stude
 router.post("/admin/register/students", authAdmin, adminController.register_students);
 
 // get a company job
-router.get("/admin/company/job/details", authAdmin, adminController.get_job);
+router.get("/admin/company/job/details/:jobId", authAdmin, adminController.get_job);
 
 // get all companies
 router.get("/admin/company/jobs", authAdmin, adminController.get_company_jobs);

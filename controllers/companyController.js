@@ -148,24 +148,6 @@ module.exports.delete_company = async (req, res) => {
 
 // Company Job Routes --> /company/job/
 
-// get Company Job
-module.exports.get_job = async (req, res) => {
-  try {
-    let job = await Job.findById(req.params.jobId).populate('getCompany')
-    if(!job){
-      return res.status(404).json({succss: false, message:"Job not found"})
-    }
-    res.status(200).json({
-      success: true,
-      data: job,
-      message: "Job & Company found"
-    })
-  } catch (err) {
-    console.log(err);
-    res.status(404).json({succss: false, message:"Job not found"})
-  }
-}
-
 // Add Company Job
 module.exports.add_job = async (req, res) => {
   try {
