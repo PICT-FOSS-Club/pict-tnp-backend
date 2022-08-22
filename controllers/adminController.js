@@ -857,10 +857,14 @@ module.exports.generate_report = async (req, res) => {
         // );
       // }
       // console.log(JSON.stringify(totalAppliedForJob))
+
+
+
+    
     }
     // console.log(obj)
     res.send({ success: true, data: reportArr, message:"Placement Report Generated" });
-  } catch (err) {
+  }catch (err) {
     console.log("Error in generating report:", err);
   }
 };

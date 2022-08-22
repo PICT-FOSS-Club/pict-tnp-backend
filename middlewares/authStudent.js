@@ -10,6 +10,7 @@ const authStudent = async (req, res, next) => {
                 res.status(401).send({ AuthError });
             } else {
                 const student = await Student.findById(decodedToken.id);
+                // console.log(student)
                 req.student = student;
                 next();
             }

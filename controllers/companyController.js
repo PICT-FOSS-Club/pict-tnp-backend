@@ -151,6 +151,7 @@ module.exports.delete_company = async (req, res) => {
 // Add Company Job
 module.exports.add_job = async (req, res) => {
   try {
+    console.log(req.body)
     await Job.create(req.body);
 
     const company = await Company.findById(req.body.companyId).populate({
