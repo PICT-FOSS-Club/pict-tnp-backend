@@ -139,23 +139,11 @@ module.exports.drive_compaines = async (req, res) => {
   }
 };
 
-module.exports.apply_company = async (req, res) => {
+module.exports.check_eligiblity = async (req, res) => {
   try {
-    const job = await Job.findById(req.body.jobId);
+    const job = await Job.findById(req.params.jobId);
     if (!job) {
-      return res.status(403).json({ success: false, message: "Job not found" });
-    }
-
-    const student = await Student.findById(req.student._id);
-
-    const studentAlreadyApplied = await Application.findOne({
-      $and: [{ studentId: req.student._id }, { jobId: req.body.jobId }],
-    });
-
-    if (studentAlreadyApplied) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Student already applied" });
+      return res.status(404).json({ success: false, message: "Job not found" });
     }
 
     // todo: checking eligible before making student's application
@@ -163,53 +151,58 @@ module.exports.apply_company = async (req, res) => {
     // * 1. check branch - DONE
     // * 2. Course - ug/pg - DONE
     // * 3. Gender - DONE
-    // ! 4. HSC & SSC percentage - SSC DONE, HSC REMAINS
-    // ! 5. End date (last date of application) Criteria - DONE WITH BACKEND, CHECK WITH FRONTEND
+    // * 4. SSC percentage - SSC DONE, 
+    // ! HSC REMAINS
+    // * 5. End date (last date of application) Criteria - DONE WITH BACKEND, CHECK WITH FRONTEND
     // * 6. Amcat criteria - DONE
     // * 7. Attendance Criteria - DONE
     // * 8. CGPA criteria - DONE
 
-    let canApply = true;
-    const whyNotEligible = [
-      { courseName: true },
-      { branch: true },
-      { gender: true },
-      { sscPercentage: true },
-      { endDate: true },
-      { amcatScore: true },
-      { attendance: true },
-      { aggrCgpa: true }
-    ]
+    const eligiblity = {
+      status: true,
+      newApplication: true,
+      course: true,
+      branch: true,
+      gender: true,
+      sscPercentage: true,
+      endDate: true,
+      amcatScore: true,
+      attendance: true,
+      aggrCgpa: true,
+      activeBacklog: true,
+      passiveBacklog: true,
+    }
+
+    const student = await Student.findById(req.student._id);
+
+    const studentAlreadyApplied = await Application.findOne({
+      $and: [{ studentId: req.student._id }, { jobId: req.params.jobId }],
+    });
+
+    if (studentAlreadyApplied) {
+      eligiblity.newApplication = false;
+    }
 
     // * checking course - true for pg
     let companyCriteriaCourse;
     if ((!job.criteria.pg.cs && !job.criteria.pg.it && !job.criteria.pg.entc) && (job.criteria.ug.cs || job.criteria.ug.it || job.criteria.ug.entc)) {
-      // only for ug
       companyCriteriaCourse = "UG";
     }
     else if ((job.criteria.pg.cs || job.criteria.pg.it || job.criteria.pg.entc) && (!job.criteria.ug.cs && !job.criteria.ug.it && !job.criteria.ug.entc)) {
-      // only for pg
       companyCriteriaCourse = "PG";
     }
     else {
-      // for both ug and pg
       companyCriteriaCourse = "ALL";
     }
 
-    // if (companyCriteriaCourse !== student.isUg) {
-    //   whyNotEligible[1] = { courseName: false }
-    //   canApply = false;
-    // }
-
     if (companyCriteriaCourse != "ALL") {
       if ((student.isUg && (companyCriteriaCourse == "PG") || (!student.isUg && (companyCriteriaCourse == "UG")))) {
-        whyNotEligible[0] = { courseName: false }
-        canApply = false;
+        eligiblity.course = false;
+        eligiblity.status = false;
       }
     }
 
     // * branch checking
-    // const jobCriteria = job.criteria;
 
     let applicableBranchArray = [];
     let csApplicable, itApplicable, entcApplicable;
@@ -228,15 +221,11 @@ module.exports.apply_company = async (req, res) => {
       entcApplicable = job.criteria.pg.entc;
       if (entcApplicable) applicableBranchArray.push("entc");
     }
-    // console.table(applicableBranchArray);
 
     if (!applicableBranchArray.includes(student.branch)) {
-      whyNotEligible[1] = { branch: false }
-      canApply = false;
+      eligiblity.branch = false;
+      eligiblity.status = false;
     }
-    // console.log("canapply after branch cheking", canApply);
-
-    // console.log("canapply after course cheking", canApply);
 
     // * Gender criteria checking
     const studentGender = student.gender;
@@ -244,42 +233,30 @@ module.exports.apply_company = async (req, res) => {
     const femaleApplicable = job.criteria.gender.female;
     const bothApplicable = job.criteria.gender.both;
 
-    // console.table(job.criteria.gender);
-
     if (!bothApplicable) {
       if (studentGender == "female") {
         if (!femaleApplicable) {
-          whyNotEligible[2] = { gender: false }
-          canApply = false;
+          eligiblity.gender = false;
+              eligiblity.status = false;
         }
       } else if (studentGender == "male") {
         if (!maleApplicable) {
-          whyNotEligible[2] = { gender: false }
-          canApply = false;
+          eligiblity.gender = false;
+              eligiblity.status = false;
         }
       }
     }
-    // console.log("canapply after gender cheking", canApply);
 
     // * checking SSC percentage
     // ! HSC % checking remains as WDKT student has done hsc or diploma and company criteria are
     const studentSscPercentage = student.sscPercentage;
 
     if (studentSscPercentage < job.criteria.sscPercentage) {
-      whyNotEligible[3] = { sscPercentage: false }
-      canApply = false;
+      eligiblity.sscPercentage = false;
+      eligiblity.status = false;
     }
-    // console.log("canapply after ssc cheking", canApply);
 
     // * checking End date (last date of application) Criteria
-    var today = new Date();
-    // var todaysDate =
-    //   today.getFullYear() +
-    //   "-" +
-    //   (today.getMonth() + 1) +
-    //   "-" +
-    //   today.getDate();
-
     // ! Note -  new Date(kolkata....).... will give date-time in dd/mm/yyyy ss:mm:hh format
     // ! so to convert it into mongoose format for checking create another function new DatetodaysDate) which will give mongoose format YYYY-MM-DDTHH:MM:SS.SSSZ
     var todaysDate = new Date().toLocaleString("en-US", {
@@ -290,51 +267,77 @@ module.exports.apply_company = async (req, res) => {
     todaysDate = todaysDate.toISOString();
     let companyEndDate = job.endDate;
     let formattedCompanyEndDate = companyEndDate.toISOString();
-    // console.log("Todays date is:",todaysDate," Companys end date is:",formattedCompanyEndDate);
 
     // *  todo : Check Date Criteria
     // ! careful with logic here
     if (formattedCompanyEndDate < todaysDate) {
-      whyNotEligible[4] = { endDate: false }
-      canApply = false;
+      eligiblity.endDate = false;
+      eligiblity.status = false;
     }
-    // console.log("canApply after end-date checking:", canApply);
 
     // * checking amcat Criteria
     // ! note amcatScore is in job where amcatScore was in company
     if (job.criteria.amcatScore > student.amcatScore) {
-      whyNotEligible[5] = { amcatScore: false }
-      canApply = false;
+      eligiblity.amcatScore = false;
+      eligiblity.status = false;
     }
 
     // * checking attendance Criteria
     // ! note attendance is in job where attendance was in company
     if (job.criteria.attendance > student.attendance) {
-      whyNotEligible[6] = { attendance: false }
-      canApply = false;
+      eligiblity.attendance = false;
+      eligiblity.status = false;
     }
 
     if (job.criteria.aggrCgpa > student.aggrCgpa) {
-      whyNotEligible[7] = { aggrCgpa: false }
-      canApply = false;
+      eligiblity.aggrCgpa = false;
+      eligiblity.status = false;
     }
-    // console.log("canApply after aggr.CGPA checking:", canApply);
 
-    if (canApply) {
-      await Application.create({
-        jobId: req.body.jobId,
-        studentId: req.student._id,
-      });
-      // student.applications.push({ applicationId: application._id });
-      await student.save();
-      return res
-        .status(201)
-        .json({ success: true, message: "Application created successfully." });
-    } else {
-      return res
-        .status(403)
-        .json({ success: false, error: whyNotEligible })
+    if (job.criteria.activeBacklog < student.activeBacklog) {
+      eligiblity.activeBacklog = false;
+      eligiblity.status = false;
     }
+
+    if (job.criteria.passiveBacklog < student.passiveBacklog) {
+      eligiblity.passiveBacklog = false;
+      eligiblity.status = false;
+    }
+
+    res.status(200).json({ success: true, data: eligiblity, message: "Eligible" });
+  } catch (err) {
+    console.log(err);
+    res
+      .status(400)
+      .json({ success: false, message: "Server Error" });
+  }
+}
+
+module.exports.apply_company_job = async (req, res) => {
+  try {
+    const job = await Job.findById(req.body.jobId);
+    if (!job) {
+      return res.status(403).json({ success: false, message: "Job not found" });
+    }
+
+    const studentAlreadyApplied = await Application.findOne({
+      $and: [{ studentId: req.student._id }, { jobId: req.body.jobId }],
+    });
+
+    if (studentAlreadyApplied) {
+      return res
+        .status(405)
+        .json({ success: false, message: "Student already applied" });
+    }
+
+    await Application.create({
+      jobId: req.body.jobId,
+      studentId: req.student._id,
+    });
+
+    return res
+      .status(201)
+      .json({ success: true, message: "Application created successfully." });
   } catch (err) {
     console.log(err);
     res

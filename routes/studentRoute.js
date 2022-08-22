@@ -29,9 +29,16 @@ router.get(
 
 // studentApplyForCompanies later - companyid take from req.body._id
 router.post(
-  "/student/company/apply",
+  "/student/company/job/apply",
   authStudent,
-  studentController.apply_company
+  studentController.apply_company_job
+);
+
+// Check Eligibility of Student
+router.get(
+  "/student/company/job/eligiblity/:jobId",
+  authStudent,
+  studentController.check_eligiblity
 );
 
 // reset student password
@@ -61,7 +68,7 @@ router.post(
 );
 
 // get applied jobs details
-router.get("/student/job/applied", authStudent, studentController.get_applied_jobs);
+router.get("/student/company/job/applied", authStudent, studentController.get_applied_jobs);
 
 // delete application
 router.delete("/student/application/delete/:applicationId", authStudent, studentController.delete_application);
