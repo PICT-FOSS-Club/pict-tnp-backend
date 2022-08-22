@@ -109,7 +109,7 @@ module.exports.logout_student = (req, res) => {
 module.exports.student_profile = async (req, res) => {
   try {
     const student = await Student.findById(req.student._id).populate({
-      path: "applications",
+      path: "applications"
     });
     if (!student) {
       return res.status(400).json({ success: false, message: "Student not found" });
@@ -282,10 +282,11 @@ module.exports.apply_company = async (req, res) => {
 
     // ! Note -  new Date(kolkata....).... will give date-time in dd/mm/yyyy ss:mm:hh format
     // ! so to convert it into mongoose format for checking create another function new DatetodaysDate) which will give mongoose format YYYY-MM-DDTHH:MM:SS.SSSZ
-    var todaysDate = new Date().toLocaleString("en-US", {
-      timeZone: "Asia/Kolkata",
-    });
-    todaysDate = new Date(todaysDate);
+    // var todaysDate = new Date().toLocaleString("en-US", {
+    //   timeZone: "Asia/Kolkata",
+    // });
+    var todaysDate = new Date();
+    console.log('todaysDate', todaysDate);
     // * above todaysDate is in object type, convert it into ISOStrig type not string(thurs 21 august 2022) type
     todaysDate = todaysDate.toISOString();
     let companyEndDate = job.endDate;
