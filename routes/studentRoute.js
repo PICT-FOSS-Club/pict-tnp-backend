@@ -20,9 +20,6 @@ router.get(
   studentController.drive_compaines
 );
 
-// get applied jobs list
-router.get("/student/job/applied",authStudent, studentController.applied_job_list)
-
 // company details,
 router.get(
   "/student/company/details/:companyId",
@@ -67,6 +64,6 @@ router.post(
 router.get("/student/job/applied", authStudent, studentController.get_applied_jobs);
 
 // delete application
-router.delete("/student/application/delete/:applicationId", authStudent, adminController.delete_application);
+router.delete("/student/application/delete/:applicationId", authStudent, studentController.delete_application);
 
 module.exports = router;
