@@ -21,7 +21,7 @@ const companySchema = new mongoose.Schema(
       type: String,
     }
   },
-  { timestamps: true }
+  { id:false, timestamps: true }
 );
 
 // * We can get all the Company JobDescriptions using Populate as follows:

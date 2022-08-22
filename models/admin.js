@@ -24,7 +24,7 @@ const adminSchema = new mongoose.Schema(
     resetPasswordExpire: Date,
     resetPasswordTokenForForgotPassword: String,
   },
-  { timestamps: true }
+  { id: false, timestamps: true }
 );
 
 // before saving to db hashing of ppassword

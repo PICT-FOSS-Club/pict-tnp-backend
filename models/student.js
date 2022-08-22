@@ -284,7 +284,7 @@ const studentSchema = new mongoose.Schema(
     resetPasswordExpire: Date,
     resetPasswordTokenForForgotPassword: String,
   }, 
-  {timestamps: true}
+  {id: false, timestamps: true}
 );
 
 // * This virtual will make relation between Job and Company

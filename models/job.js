@@ -113,7 +113,7 @@ const jobSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  { id:false, timestamps: true }
 );
 
 // * This virtual will make relation between Application and Job
