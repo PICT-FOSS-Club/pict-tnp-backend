@@ -7,18 +7,17 @@ const router = new express.Router();
 // add company
 router.post("/company/add", authAdmin, companyController.add_company);
 
-// upload company files
-router.post("/company/files/:companyId", authAdmin, companyController.upload_company_files);
-
 // update company
 router.post("/company/update", authAdmin, companyController.update_company);
 
 // delete company
-router.delete("/company/delete/:id", authAdmin,companyController.delete_company);
+router.delete("/company/delete/:id", authAdmin, companyController.delete_company);
 
 // add company job
 router.post("/company/job/add", authAdmin, companyController.add_job);
 
+// upload job file
+router.post("/job/files/:companyId/:jobId", authAdmin, companyController.upload_job_files)
 // update company job
 router.post("/company/job/update", authAdmin, companyController.update_job);
 

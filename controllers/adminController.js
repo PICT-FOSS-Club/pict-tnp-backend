@@ -340,12 +340,13 @@ module.exports.register_students = async (req, res) => {
     // console.log('err in last clasuse', err)
   }
 };
+
 // get Company Job
 module.exports.get_job = async (req, res) => {
   try {
     let job = await Job.findById(req.params.jobId).populate("company");
-    if(!job){
-      return res.status(404).json({succss: false, message:"Job not found"})
+    if (!job) {
+      return res.status(404).json({ succss: false, message: "Job not found" })
     }
     res.status(200).json({
       success: true,
@@ -354,7 +355,7 @@ module.exports.get_job = async (req, res) => {
     })
   } catch (err) {
     console.log(err);
-    res.status(404).json({succss: false, message:"Job not found"})
+    res.status(404).json({ succss: false, message: "Job not found" })
   }
 }
 
@@ -419,44 +420,47 @@ module.exports.get_dashboard_details = async (req, res) => {
 
     dashboard_details.totalStudents = (await Student.find()).length;
     dashboard_details.totalCompanies = (await Company.find()).length;
-    dashboard_details.csPlacedStudents = (await Student.find({ 
-      $and: [ 
-        { 
-          branch:  { $eq: "cs" } 
+    dashboard_details.csPlacedStudents = (await Student.find({
+      $and: [
+        {
+          branch: { $eq: "cs" }
         },
-        {$or: 
-          [
-            { "LTE20.status": { $eq: true} },
-            { "GT20.status": { $eq: true} },
-          ]
+        {
+          $or:
+            [
+              { "LTE20.status": { $eq: true } },
+              { "GT20.status": { $eq: true } },
+            ]
         }
       ]
     })).length;
 
-    dashboard_details.itPlacedStudents = (await Student.find({ 
-      $and: [ 
-        { 
-          branch:  { $eq: "it" } 
+    dashboard_details.itPlacedStudents = (await Student.find({
+      $and: [
+        {
+          branch: { $eq: "it" }
         },
-        {$or: 
-          [
-            { "LTE20.status": { $eq: true} },
-            { "GT20.status": { $eq: true} },
-          ]
+        {
+          $or:
+            [
+              { "LTE20.status": { $eq: true } },
+              { "GT20.status": { $eq: true } },
+            ]
         }
       ]
     })).length;
 
-    dashboard_details.entcPlacedStudents = (await Student.find({ 
-      $and: [ 
-        { 
-          branch:  { $eq: "entc" } 
+    dashboard_details.entcPlacedStudents = (await Student.find({
+      $and: [
+        {
+          branch: { $eq: "entc" }
         },
-        {$or: 
-          [
-            { "LTE20.status": { $eq: true} },
-            { "GT20.status": { $eq: true} },
-          ]
+        {
+          $or:
+            [
+              { "LTE20.status": { $eq: true } },
+              { "GT20.status": { $eq: true } },
+            ]
         }
       ]
     })).length;
@@ -469,12 +473,13 @@ module.exports.get_dashboard_details = async (req, res) => {
 };
 
 module.exports.get_job_round_applied_students = async (req, res) => {
+  const { jobId, roundNo } = req.params;
   try {
-    const { jobId, roundNo } = req.body;
     Job.findById(jobId)
       .populate({ path: "jobApplications" })
       .exec(async function (err, job) {
         const studentIds = [];
+        console.log(job);
         job.jobApplications.map((application) => {
           if (application.studentRoundCleared >= roundNo - 1) {
             studentIds.push(application.studentId);
@@ -497,8 +502,8 @@ module.exports.get_job_round_applied_students = async (req, res) => {
 };
 
 module.exports.get_job_round_qualified_students = async (req, res) => {
+  const { jobId, roundNo } = req.params;
   try {
-    const { jobId, roundNo } = req.body;
     Job.findById(jobId)
       .populate({ path: "jobApplications" })
       .exec(async function (err, job) {
@@ -525,8 +530,8 @@ module.exports.get_job_round_qualified_students = async (req, res) => {
 };
 
 module.exports.get_job_round_disqualified_students = async (req, res) => {
+  const { jobId, roundNo } = req.params;
   try {
-    const { jobId, roundNo } = req.body;
     Job.findById(jobId)
       .populate({ path: "jobApplications" })
       .exec(async function (err, job) {
@@ -700,15 +705,15 @@ module.exports.generate_report = async (req, res) => {
         // * for finding no of placed students and also forFor Female, Male & total
         const data = await Application.find({ jobId: { $eq: job._id } }).populate("student")
         // .exec(async function (err, data) {
-          // if (err) {
-            // return res.status(404).json({ success: false, message: "Application not found", errors: err })
-            // console.log('err in totalAppliedForJob', err);
-          // } else {
-            // const maleStudents = await data.find();
-            // console.log('male students',data[0])
-        if(!data.length){
-          console.log(`job ctc>20, but no this job does not have any application `,data);
-        }else{
+        // if (err) {
+        // return res.status(404).json({ success: false, message: "Application not found", errors: err })
+        // console.log('err in totalAppliedForJob', err);
+        // } else {
+        // const maleStudents = await data.find();
+        // console.log('male students',data[0])
+        if (!data.length) {
+          console.log(`job ctc>20, but no this job does not have any application `, data);
+        } else {
 
           for (let i = 0; i < data.length; i++) {
             let student = data[i];
@@ -780,91 +785,91 @@ module.exports.generate_report = async (req, res) => {
         // * For Female, Male total
         const data = await Application.find({ jobId: { $eq: job._id } }).populate("student")
         // .exec(
-          if(!data.length){
-            console.log(`No applicants to this job`,data)
-          }else{
+        if (!data.length) {
+          console.log(`No applicants to this job`, data)
+        } else {
 
-              // async function (err, data) {
-              // if (err) {
-              //   console.log('err in totalAppliedForJob', err);
-              // } else {
-                // const maleStudents = await data.find();
-                // console.log('male students',data[0])
-                for (let i = 0; i < data.length; i++) {
-                  let student = data[i];
+          // async function (err, data) {
+          // if (err) {
+          //   console.log('err in totalAppliedForJob', err);
+          // } else {
+          // const maleStudents = await data.find();
+          // console.log('male students',data[0])
+          for (let i = 0; i < data.length; i++) {
+            let student = data[i];
 
-                  // console.log('student.gender',JSON.stringify(student.student));
-                  let studentsList = (student.student);
-                  // if(studentsList[0].gender == "male"){
-                  //   maleStudentsCount++;
-                  // }else{
-                  //   femaleStudentsCount++;
-                  // }
-                  // console.log('studentsList',studentsList[0].gender)
-                  // console.log('studentsList[0].LTE20.jobId == job._id for ',JSON.stringify(studentsList[0].LTE20.jobId)," ", JSON.stringify(job._id))
-                  if (!studentsList[0].GT20.status && studentsList[0].LTE20.status && JSON.stringify(studentsList[0].LTE20.jobId) === JSON.stringify(job._id)) {
-                    // console.log('studentsList[0].gender == male for ',JSON.stringify(studentsList[0].gender))
-                    if (studentsList[0].gender == "male") {
-                      maleStudentsCount++;
-                    } else {
-                      femaleStudentsCount++;
-                    }
+            // console.log('student.gender',JSON.stringify(student.student));
+            let studentsList = (student.student);
+            // if(studentsList[0].gender == "male"){
+            //   maleStudentsCount++;
+            // }else{
+            //   femaleStudentsCount++;
+            // }
+            // console.log('studentsList',studentsList[0].gender)
+            // console.log('studentsList[0].LTE20.jobId == job._id for ',JSON.stringify(studentsList[0].LTE20.jobId)," ", JSON.stringify(job._id))
+            if (!studentsList[0].GT20.status && studentsList[0].LTE20.status && JSON.stringify(studentsList[0].LTE20.jobId) === JSON.stringify(job._id)) {
+              // console.log('studentsList[0].gender == male for ',JSON.stringify(studentsList[0].gender))
+              if (studentsList[0].gender == "male") {
+                maleStudentsCount++;
+              } else {
+                femaleStudentsCount++;
+              }
 
-                    // * now checking for course and department
-                    if (studentsList[0].isUg) {
-                      // let ugCsStudentsCount = 0;
-                      // let ugItStudentsCount = 0;
-                      // let ugEntcStudentsCount = 0;
-                      if (studentsList[0].branch == "cs") {
-                        ugCsStudentsCount++;
-                      } else if (studentsList[0].branch == "it") {
-                        ugItStudentsCount++;
-                      } else if (studentsList[0].branch == "entc") {
-                        ugEntcStudentsCount++;
-                      }
-                    } else {
-                      // let pgCsStudentsCount = 0;
-                      // let pgItStudentsCount = 0;
-                      // let pgEntcStudentsCount = 0;
-                      if (studentsList[0].branch == "cs") {
-                        pgCsStudentsCount++;
-                      } else if (studentsList[0].branch == "it") {
-                        pgItStudentsCount++;
-                      } else if (studentsList[0].branch == "entc") {
-                        pgEntcStudentsCount++;
-                      }
-                    }
-                  }
-                  totalStudentsCount = maleStudentsCount + femaleStudentsCount;
+              // * now checking for course and department
+              if (studentsList[0].isUg) {
+                // let ugCsStudentsCount = 0;
+                // let ugItStudentsCount = 0;
+                // let ugEntcStudentsCount = 0;
+                if (studentsList[0].branch == "cs") {
+                  ugCsStudentsCount++;
+                } else if (studentsList[0].branch == "it") {
+                  ugItStudentsCount++;
+                } else if (studentsList[0].branch == "entc") {
+                  ugEntcStudentsCount++;
                 }
-              // }
-              // console.log('male students', maleStudentsCount, 'female students', femaleStudentsCount, 'total students count',totalStudentsCount)
-              // console.log('ugCS', ugCsStudentsCount, 'ugIT', ugItStudentsCount, 'ugENTC',ugEntcStudentsCount)
-              // console.log('pgCS', pgCsStudentsCount, 'pgIT', pgItStudentsCount, 'pgENTC',pgEntcStudentsCount)
-              obj.male = maleStudentsCount
-              obj.female = femaleStudentsCount
-              obj.total = totalStudentsCount
-              obj.ugCsStudentsCount = ugCsStudentsCount
-              obj.ugItStudentsCount = ugItStudentsCount
-              obj.ugEntcStudentsCount = ugEntcStudentsCount
-              obj.pgCsStudentsCount = pgCsStudentsCount
-              obj.pgItStudentsCount = pgItStudentsCount
-              obj.pgEntcStudentsCount = pgEntcStudentsCount
-              console.table(obj)
-              reportArr.push(obj)
-        }
+              } else {
+                // let pgCsStudentsCount = 0;
+                // let pgItStudentsCount = 0;
+                // let pgEntcStudentsCount = 0;
+                if (studentsList[0].branch == "cs") {
+                  pgCsStudentsCount++;
+                } else if (studentsList[0].branch == "it") {
+                  pgItStudentsCount++;
+                } else if (studentsList[0].branch == "entc") {
+                  pgEntcStudentsCount++;
+                }
+              }
+            }
+            totalStudentsCount = maleStudentsCount + femaleStudentsCount;
           }
-        // );
+          // }
+          // console.log('male students', maleStudentsCount, 'female students', femaleStudentsCount, 'total students count',totalStudentsCount)
+          // console.log('ugCS', ugCsStudentsCount, 'ugIT', ugItStudentsCount, 'ugENTC',ugEntcStudentsCount)
+          // console.log('pgCS', pgCsStudentsCount, 'pgIT', pgItStudentsCount, 'pgENTC',pgEntcStudentsCount)
+          obj.male = maleStudentsCount
+          obj.female = femaleStudentsCount
+          obj.total = totalStudentsCount
+          obj.ugCsStudentsCount = ugCsStudentsCount
+          obj.ugItStudentsCount = ugItStudentsCount
+          obj.ugEntcStudentsCount = ugEntcStudentsCount
+          obj.pgCsStudentsCount = pgCsStudentsCount
+          obj.pgItStudentsCount = pgItStudentsCount
+          obj.pgEntcStudentsCount = pgEntcStudentsCount
+          console.table(obj)
+          reportArr.push(obj)
+        }
+      }
+      // );
       // }
       // console.log(JSON.stringify(totalAppliedForJob))
 
 
 
-    
+
     }
     // console.log(obj)
-    res.send({ success: true, data: reportArr, message:"Placement Report Generated" });
-  }catch (err) {
+    res.send({ success: true, data: reportArr, message: "Placement Report Generated" });
+  } catch (err) {
     console.log("Error in generating report:", err);
   }
 };

@@ -44,13 +44,13 @@ router.get("/admin/student/all", authAdmin, adminController.get_all_students);
 router.get("/admin/dashboard/details", authAdmin, adminController.get_dashboard_details);
 
 // get Applied Students of a Job for Particular Round
-router.get("/admin/company/applied", authAdmin, adminController.get_job_round_applied_students);
+router.get("/admin/company/applied/:roundNo/:jobId", authAdmin, adminController.get_job_round_applied_students);
 
 // get qualified students for a round of a  job
-router.get("/admin/company/qualified", authAdmin, adminController.get_job_round_qualified_students);
+router.get("/admin/company/qualified/:roundNo/:jobId", authAdmin, adminController.get_job_round_qualified_students);
 
 // get disqualified students for a round of a  job
-router.get("/admin/company/disqualified", authAdmin, adminController.get_job_round_disqualified_students);
+router.get("/admin/company/disqualified/:roundNo/:jobId", authAdmin, adminController.get_job_round_disqualified_students);
 
 // Get Placed students list,excel:
 router.get("/admin/student/placed", authAdmin, adminController.get_placed_students);

@@ -111,7 +111,7 @@ module.exports.student_profile = async (req, res) => {
     const student = await Student.findById(req.student._id).populate({
       path: "applications",
     });
-    if(!student){
+    if (!student) {
       return res.status(400).json({ success: false, message: "Student not found" });
     }
     res.status(200).json({ student, success: true });
@@ -181,30 +181,32 @@ module.exports.apply_company = async (req, res) => {
       { aggrCgpa: true }
     ]
 
-      // * checking course - true for pg
-      let companyCriteriaCourse;
-      if((!job.criteria.pg.cs && !job.criteria.pg.it && !job.criteria.pg.entc) && (job.criteria.ug.cs || job.criteria.ug.it || job.criteria.ug.entc)){
-        // only for ug
-        companyCriteriaCourse = "UG";}
-      else if((job.criteria.pg.cs || job.criteria.pg.it || job.criteria.pg.entc) && (!job.criteria.ug.cs && !job.criteria.ug.it && !job.criteria.ug.entc)){
-        // only for pg
-        companyCriteriaCourse = "PG";}
-      else{
-        // for both ug and pg
-        companyCriteriaCourse = "ALL";
+    // * checking course - true for pg
+    let companyCriteriaCourse;
+    if ((!job.criteria.pg.cs && !job.criteria.pg.it && !job.criteria.pg.entc) && (job.criteria.ug.cs || job.criteria.ug.it || job.criteria.ug.entc)) {
+      // only for ug
+      companyCriteriaCourse = "UG";
+    }
+    else if ((job.criteria.pg.cs || job.criteria.pg.it || job.criteria.pg.entc) && (!job.criteria.ug.cs && !job.criteria.ug.it && !job.criteria.ug.entc)) {
+      // only for pg
+      companyCriteriaCourse = "PG";
+    }
+    else {
+      // for both ug and pg
+      companyCriteriaCourse = "ALL";
+    }
+
+    // if (companyCriteriaCourse !== student.isUg) {
+    //   whyNotEligible[1] = { courseName: false }
+    //   canApply = false;
+    // }
+
+    if (companyCriteriaCourse != "ALL") {
+      if ((student.isUg && (companyCriteriaCourse == "PG") || (!student.isUg && (companyCriteriaCourse == "UG")))) {
+        whyNotEligible[0] = { courseName: false }
+        canApply = false;
       }
-  
-      // if (companyCriteriaCourse !== student.isUg) {
-      //   whyNotEligible[1] = { courseName: false }
-      //   canApply = false;
-      // }
-  
-      if(companyCriteriaCourse != "ALL"){
-        if ((student.isUg && (companyCriteriaCourse == "PG") || (!student.isUg && (companyCriteriaCourse == "UG")))) {
-          whyNotEligible[0] = { courseName: false }
-          canApply = false;
-        }
-      }
+    }
 
     // * branch checking
     // const jobCriteria = job.criteria;
@@ -553,17 +555,17 @@ module.exports.company_details = async (req, res) => {
 };
 
 module.exports.get_applied_jobs = async (req, res) => {
-  try{
-    Student.findById(req.student._id).populate("applications").exec(async function(err, student){
-      if(err){
+  try {
+    Student.findById(req.student._id).populate("applications").exec(async function (err, student) {
+      if (err) {
         return res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
       }
       const applicationIds = student.applications.map((application) => application._id.toString());
-      const applications = await Application.find({ _id: { $in: applicationIds } }).populate({ path: 'job', populate: { path: 'company'} });
-      res.status(200).json({ success: true, data: applications, message: "Applied Jobs"})
+      const applications = await Application.find({ _id: { $in: applicationIds } }).populate({ path: 'job', populate: { path: 'company' } });
+      res.status(200).json({ success: true, data: applications, message: "Applied Jobs" })
     });
   }
-  catch(err){
+  catch (err) {
     res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
   }
 }
@@ -592,5 +594,23 @@ module.exports.delete_application = async (req, res) => {
       error: err,
       message: "Error while Deleting Application.",
     });
+  }
+}
+
+// get Job Details
+module.exports.get_job_details = async (req, res) => {
+  try {
+    let job = await Job.findById(req.params.jobId).populate("company");
+    if (!job) {
+      return res.status(404).json({ succss: false, message: "Job not found" })
+    }
+    res.status(200).json({
+      success: true,
+      data: job,
+      message: "Job & Company found"
+    })
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({ succss: false, message: "Job not found" })
   }
 }

@@ -66,4 +66,7 @@ router.get("/student/job/applied", authStudent, studentController.get_applied_jo
 // delete application
 router.delete("/student/application/delete/:applicationId", authStudent, studentController.delete_application);
 
+// get a job details
+router.get("/student/job/details/:jobId", authStudent, studentController.get_job_details);
+
 module.exports = router;

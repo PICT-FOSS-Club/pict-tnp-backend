@@ -1,6 +1,6 @@
 const Job = require("../models/job");
 const Company = require("../models/company");
-const CompanyFile = require("../models/companyFile");
+const jobFile = require("../models/jobFile");
 const multer = require("multer");
 const fs = require("fs-extra");
 const mv = require("mv");
@@ -9,6 +9,7 @@ const Application = require("../models/application");
 const Student = require("../models/student");
 const mongoose = require("mongoose");
 const nodeMailer = require("nodemailer");
+const JobFile = require("../models/jobFile");
 
 // Company Routes --> /company/
 
@@ -22,8 +23,14 @@ let upload = multer({
         throw Error("Company Not Found");
       }
       req.company = company;
-      console.log(2, req.company);
-      let path = `./uploads/${company.name}/files`;
+      let jobId = req.params.jobId;
+      console.log(jobId);
+      let job = await Job.findById(jobId);
+      req.job = job;
+      if (!job) {
+        throw Error("Job Not Found");
+      }
+      let path = `./uploads/${company.name}/${job.name}`;
       if (!fs.existsSync(path)) {
         fs.mkdirSync(path, { recursive: true });
       }
@@ -31,10 +38,12 @@ let upload = multer({
       cb(null, path);
     },
     filename: async (req, file, cb) => {
-      cb(null, req.company.name + path.extname(file.originalname));
+      const filename = req.job.name;
+      req.filename = filename;
+      cb(null, filename + path.extname(file.originalname));
     },
   }),
-}).single("company-file");
+}).single("job-file");
 
 // Add Company
 module.exports.add_company = async (req, res) => {
@@ -53,51 +62,9 @@ module.exports.add_company = async (req, res) => {
   }
 };
 
-// Upload Company Files
-module.exports.upload_company_files = async (req, res) => {
-  upload(req, res, async () => {
-    try {
-      const company = await Company.findById(req.params.companyId);
-      const companyFileExists = await CompanyFile.findOne({
-        companyId: req.params.companyId,
-      });
-      if (!companyFileExists) {
-        let companyFileDetails = await CompanyFile.create({
-          companyId: company._id,
-          path: `./uploads/${company.name}/files/${company.name}.pdf`,
-        });
-        res.status(200).json({
-          success: true,
-          message: "Company file uploaded Successfully",
-          companyFile: companyFileDetails,
-        });
-      } else {
-        res.status(200).json({
-          success: true,
-          message: "Company file updated Successfully",
-          companyFile: companyFileExists,
-        });
-      }
-    } catch (err) {
-      console.log(err);
-      res.status(404).json({ success: false, message: err.message });
-      // if (
-      //   fs.existsSync(
-      //     `./uploads/${req.company.name}/files/${req.company.name}.pdf`
-      //   )
-      // ) {
-      //   fs.unlink(
-      //     `./uploads/${req.company.name}/files/${req.company.name}.pdf`
-      //   );
-      // }
-    }
-  });
-};
-
 // Update Company
 module.exports.update_company = async (req, res) => {
   const { companyId, company } = req.body;
-
   try {
     await Company.findByIdAndUpdate(companyId, company);
     res.status(200).json({
@@ -152,14 +119,14 @@ module.exports.delete_company = async (req, res) => {
 module.exports.add_job = async (req, res) => {
   try {
     console.log(req.body)
-    await Job.create(req.body);
+    const newjob = await Job.create(req.body);
 
     const company = await Company.findById(req.body.companyId).populate({
       path: "jobDescriptions",
     });
     res.status(201).json({
       success: true,
-      data: company,
+      data: newjob,
       message: "Job Added Successfully.",
     });
   } catch (err) {
@@ -171,6 +138,28 @@ module.exports.add_job = async (req, res) => {
   }
 };
 
+//
+module.exports.upload_job_files = async (req, res) => {
+  upload(req, res, async () => {
+    try {
+      const jobFile = await JobFile.create({
+        jobId: req.job._id,
+        companyId: req.company._id,
+        path: `./uploads/${req.company.name}/${req.job.name}.pdf`
+      })
+      res.status(200).json({
+        success: true,
+        message: "Job file uploaded successfully!",
+        jobFile: jobFile
+      })
+    } catch (err) {
+      res.status(400).json({
+        success: true,
+        message: err.message,
+      })
+    }
+  })
+}
 // Update Company Job
 module.exports.update_job = async (req, res) => {
   const { jobId, job } = req.body;
@@ -259,7 +248,7 @@ module.exports.job_round_update = async (req, res) => {
 };
 
 // delete company job round
-module.exports.job_round_delete = async (req, res) => {};
+module.exports.job_round_delete = async (req, res) => { };
 
 // declare company job round result
 module.exports.job_round_result_declare = async (req, res) => {
@@ -316,12 +305,10 @@ module.exports.job_round_result_declare = async (req, res) => {
     disqualStudents = disqualStudentsEmailList.map((student) => student.email);
     console.log("disqualStudents", disqualStudents);
 
-    let qualMessage = `Your are qualified for ${roundNo + 1} round of ${
-      company.name
-    }.`;
-    let disqualMessage = `Your are Disqualified for ${roundNo + 1} round of ${
-      company.name
-    }.`;
+    let qualMessage = `Your are qualified for ${roundNo + 1} round of ${company.name
+      }.`;
+    let disqualMessage = `Your are Disqualified for ${roundNo + 1} round of ${company.name
+      }.`;
 
     if (job.totalRounds == roundNo) {
       qualMessage = `\nCongratulations you are placed in ${company.name}!😍😍😍.`;
@@ -456,19 +443,19 @@ module.exports.job_round_result_declare = async (req, res) => {
 // update company job round result
 module.exports.job_round_result_update = async (req, res) => {
   const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } = req.body;
-  try{
+  try {
     const job = await Job.findById(jobId);
     const totalRoundNo = job.totalRounds, currentRoundNo = job.currentRound, updateRoundNo = roundNo;
     if (!job) {
       return res.status(200).json({ success: false, message: "Job Not Found" });
     }
-    if(totalRoundNo == currentRoundNo){
-      if(currentRoundNo == updateRoundNo){}
-      else if(currentRoundNo > updateRoundNo){}
+    if (totalRoundNo == currentRoundNo) {
+      if (currentRoundNo == updateRoundNo) { }
+      else if (currentRoundNo > updateRoundNo) { }
     }
-    else if(totalRoundNo > currentRoundNo){
-      if(currentRoundNo == updateRoundNo){}
-      else if(currentRoundNo > updateRoundNo){
+    else if (totalRoundNo > currentRoundNo) {
+      if (currentRoundNo == updateRoundNo) { }
+      else if (currentRoundNo > updateRoundNo) {
         // Updating the Qualified Students
         if (qualifiedStudentIds.length) {
           await Application.updateMany(
@@ -480,13 +467,13 @@ module.exports.job_round_result_update = async (req, res) => {
         if (disqualifiedStudentIds.length) {
           await Application.updateMany(
             { jobId: jobId, studentId: { $in: disqualifiedStudentIds } },
-            { studentRoundCleared: updateRoundNo-1, studentResult: false }
+            { studentRoundCleared: updateRoundNo - 1, studentResult: false }
           );
         }
       }
     }
   }
-  catch(err) {
+  catch (err) {
     res.status(400).json({
       success: false,
       error: err,
