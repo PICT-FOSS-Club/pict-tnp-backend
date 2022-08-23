@@ -305,9 +305,9 @@ module.exports.job_round_result_declare = async (req, res) => {
     disqualStudents = disqualStudentsEmailList.map((student) => student.email);
     console.log("disqualStudents", disqualStudents);
 
-    let qualMessage = `Your are qualified for ${roundNo + 1} round of ${company.name
+    let qualMessage = `Congratulation, you cleared round ${parseInt(roundNo)} of ${company.name
       }.`;
-    let disqualMessage = `Your are Disqualified for ${roundNo + 1} round of ${company.name
+    let disqualMessage = `You uncleared round ${parseInt(roundNo)} of ${company.name
       }.`;
 
     if (job.totalRounds == roundNo) {
@@ -341,16 +341,16 @@ module.exports.job_round_result_declare = async (req, res) => {
 
     // now sending mail to qualified Students
     try {
-      let info = await transporter.sendMail({
-        from: process.env.SMTP_SERVICE,
-        bcc: qualStudents,
-        subject: "Qualification of Rounds",
-        html: qualMessage,
-      });
-      res.status(200).json({
-        success: true,
-        message: `Email send to ${qualStudents} successfully`,
-      });
+      // let info = await transporter.sendMail({
+      //   from: process.env.SMTP_SERVICE,
+      //   bcc: qualStudents,
+      //   subject: "Qualification of Rounds",
+      //   html: qualMessage,
+      // });
+      // res.status(200).json({
+      //   success: true,
+      //   message: `Email send to ${qualStudents} successfully`,
+      // });
       if (qualStudents.length != 0) {
         await transporter.sendMail(
           {
@@ -394,6 +394,8 @@ module.exports.job_round_result_declare = async (req, res) => {
                     }
                   }
                 );
+              }else{
+                res.status(200).json({ message: "Email sent!" });
               }
             }
           }

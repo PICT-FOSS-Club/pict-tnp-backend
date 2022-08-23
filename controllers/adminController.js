@@ -700,6 +700,7 @@ module.exports.generate_report = async (req, res) => {
       obj.pgCsStudentsCount = 0
       obj.pgItStudentsCount = 0
       obj.pgEntcStudentsCount = 0
+      obj.totalSalaryOfferedByJob = 0
       // * for gt20
       if (job.ctc > 20) {
         // * for finding no of placed students and also forFor Female, Male & total
@@ -775,6 +776,7 @@ module.exports.generate_report = async (req, res) => {
           obj.pgCsStudentsCount = pgCsStudentsCount
           obj.pgItStudentsCount = pgItStudentsCount
           obj.pgEntcStudentsCount = pgEntcStudentsCount
+          obj.totalSalaryOfferedByJob += totalStudentsCount * job.ctc;
           console.log('finalobj', obj)
           reportArr.push(obj)
         }
@@ -855,6 +857,7 @@ module.exports.generate_report = async (req, res) => {
           obj.pgCsStudentsCount = pgCsStudentsCount
           obj.pgItStudentsCount = pgItStudentsCount
           obj.pgEntcStudentsCount = pgEntcStudentsCount
+          obj.totalSalaryOfferedByJob += totalStudentsCount * job.ctc;
           console.table(obj)
           reportArr.push(obj)
         }
