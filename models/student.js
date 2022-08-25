@@ -110,17 +110,17 @@ const studentSchema = new mongoose.Schema(
 
     isHsc: {
       type: Boolean,
-      requied: true,
+      required: true,
     },
 
     isDiploma: {
       type: Boolean,
-      requied: true,
+      required: true,
     },
 
     isBoth: {
       type: Boolean,
-      requied: true,
+      required: true,
     },
 
     // HSC details
