@@ -346,7 +346,7 @@ module.exports.get_job = async (req, res) => {
   try {
     let job = await Job.findById(req.params.jobId).populate("company");
     if (!job) {
-      return res.status(404).json({ succss: false, message: "Job not found" })
+      return res.status(404).json({ success: true, message: "Job not found" })
     }
     res.status(200).json({
       success: true,
@@ -416,6 +416,8 @@ module.exports.get_dashboard_details = async (req, res) => {
       totalCompanies: 0,
       placedStudents: 0,
       unplacedStudents: 0,
+      avgSalaryBaggedByPlacedStudents: 0,
+      avgSalaryBaggedByAllStudents: 0,
     };
 
     dashboard_details.totalStudents = (await Student.find()).length;
@@ -464,10 +466,56 @@ module.exports.get_dashboard_details = async (req, res) => {
         }
       ]
     })).length;
+
+    let totalSalaryOfferedByAllJobs = 0;
+
+    // finding average ctc offered
+    let jobs = await Job.find().populate("company");
+    for (let i = 0; i < jobs.length; i++) {
+      let job = jobs[i];
+      let totalPlacedStudents = 0;
+
+      let jobCtc = job.ctc;
+      const data = await Application.find({ jobId: { $eq: job._id } }).populate("student")
+      if(!data){
+        console.log("No applicants to this job");
+      }else{
+
+        if (jobCtc > 20) {
+            {
+            for (let i = 0; i < data.length; i++) {
+              let student = data[i];
+              let studentsList = (student.student);
+              if (studentsList[0].GT20.status && JSON.stringify(studentsList[0].GT20.jobId) === JSON.stringify(job._id)) {
+                totalPlacedStudents++;
+              }
+            }
+            totalSalaryOfferedByAllJobs += totalPlacedStudents * jobCtc;
+          }
+        } else {
+          {
+            for (let i = 0; i < data.length; i++) {
+              let student = data[i];
+              let studentsList = (student.student);
+              if (!studentsList[0].GT20.status && studentsList[0].LTE20.status && JSON.stringify(studentsList[0].LTE20.jobId) === JSON.stringify(job._id)) {
+                totalPlacedStudents++;
+              }
+            }
+            totalSalaryOfferedByAllJobs += totalPlacedStudents * jobCtc;
+          }
+        }
+      }
+      // totalSalaryOfferedByAllJobs += totalPlacedStudents * jobCtc;
+      dashboard_details.avgSalaryBaggedByPlacedStudents = (totalSalaryOfferedByAllJobs / (dashboard_details.csPlacedStudents + dashboard_details.itPlacedStudents + dashboard_details.entcPlacedStudents));
+      dashboard_details.avgSalaryBaggedByAllStudents = (totalSalaryOfferedByAllJobs / dashboard_details.totalStudents);
+    }
+
+
     dashboard_details.placedStudents = (dashboard_details.csPlacedStudents + dashboard_details.itPlacedStudents + dashboard_details.entcPlacedStudents);
     dashboard_details.unplacedStudents = dashboard_details.totalStudents - dashboard_details.placedStudents;
     res.status(200).json({ success: true, dashboard_details });
   } catch (err) {
+    // console.log(err);
     res.status(400).json({ errors: err, success: false });
   }
 };
@@ -865,10 +913,6 @@ module.exports.generate_report = async (req, res) => {
       // );
       // }
       // console.log(JSON.stringify(totalAppliedForJob))
-
-
-
-
     }
     // console.log(obj)
     res.send({ success: true, data: reportArr, message: "Placement Report Generated" });
