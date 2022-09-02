@@ -18,13 +18,13 @@ let upload = multer({
     destination: async (req, file, cb) => {
       let companyId = req.params.companyId;
       let company = await Company.findById(companyId);
-      console.log(company);
+      // console.log(company);
       if (!company) {
         throw Error("Company Not Found");
       }
       req.company = company;
       let jobId = req.params.jobId;
-      console.log(jobId);
+      // console.log(jobId);
       let job = await Job.findById(jobId);
       req.job = job;
       if (!job) {
@@ -34,7 +34,7 @@ let upload = multer({
       if (!fs.existsSync(path)) {
         fs.mkdirSync(path, { recursive: true });
       }
-      console.log(path);
+      // console.log(path);
       cb(null, path);
     },
     filename: async (req, file, cb) => {
@@ -118,7 +118,7 @@ module.exports.delete_company = async (req, res) => {
 // Add Company Job
 module.exports.add_job = async (req, res) => {
   try {
-    console.log(req.body)
+    // console.log(req.body)
     const newjob = await Job.create(req.body);
 
     const company = await Company.findById(req.body.companyId).populate({
@@ -184,7 +184,7 @@ module.exports.update_job = async (req, res) => {
 module.exports.delete_job = async (req, res) => {
   try {
     const jobId = req.params.id;
-    console.log("jobId", jobId);
+    // console.log("jobId", jobId);
     const job = await Job.findById(jobId);
     // todo - delete job
     await job.remove();
@@ -201,7 +201,7 @@ module.exports.delete_job = async (req, res) => {
       .status(200)
       .json({ success: true, message: "Job deleted successfully" });
   } catch (err) {
-    console.log("err in deleting job", err);
+    // console.log("err in deleting job", err);
   }
 };
 
@@ -292,18 +292,18 @@ module.exports.job_round_result_declare = async (req, res) => {
       { _id: { $in: qualifiedStudentIds } },
       { email: true }
     );
-    console.log("qualStudentsEmailList", qualStudentsEmailList);
+    // console.log("qualStudentsEmailList", qualStudentsEmailList);
     qualStudents = qualStudentsEmailList.map((student) => student.email);
-    console.log("qualStudents", qualStudents);
+    // console.log("qualStudents", qualStudents);
 
     // finding emails of disqualified students
     const disqualStudentsEmailList = await Student.find(
       { _id: { $in: disqualifiedStudentIds } },
       { email: true }
     );
-    console.log("disqualStudentsEmailList", disqualStudentsEmailList);
+    // console.log("disqualStudentsEmailList", disqualStudentsEmailList);
     disqualStudents = disqualStudentsEmailList.map((student) => student.email);
-    console.log("disqualStudents", disqualStudents);
+    // console.log("disqualStudents", disqualStudents);
 
     let qualMessage = `Congratulation, you cleared round ${parseInt(roundNo)} of ${company.name
       }.`;
@@ -361,7 +361,7 @@ module.exports.job_round_result_declare = async (req, res) => {
           },
           async (error, data) => {
             if (error) {
-              console.log(error);
+              // console.log(error);
               res.status(500).json({ message: "ERROR SENDING MAIL !!!" });
             } else {
               // console.log("Sent! ", data.response, " messageId: ", data.messageId);
@@ -377,17 +377,17 @@ module.exports.job_round_result_declare = async (req, res) => {
                   },
                   (error, data) => {
                     if (error) {
-                      console.log(error);
+                      // console.log(error);
                       res
                         .status(500)
                         .json({ message: "ERROR SENDING MAIL !!!" });
                     } else {
-                      console.log(
-                        "Sent!",
-                        data.response,
-                        " messageId: ",
-                        data.messageId
-                      );
+                      // console.log(
+                      //   "Sent!",
+                      //   data.response,
+                      //   " messageId: ",
+                      //   data.messageId
+                      // );
                       res
                         .status(200)
                         .json({ message: "NOTIFICATION MAIL SENT !!!" });
@@ -411,15 +411,15 @@ module.exports.job_round_result_declare = async (req, res) => {
           },
           async (error, data) => {
             if (error) {
-              console.log(error);
+              // console.log(error);
               res.status(500).json({ message: "ERROR SENDING MAIL !!!" });
             } else {
-              console.log(
-                "Sent!",
-                data.response,
-                " messageId: ",
-                data.messageId
-              );
+              // console.log(
+              //   "Sent!",
+              //   data.response,
+              //   " messageId: ",
+              //   data.messageId
+              // );
               res.status(200).json({ message: "NOTIFICATION MAIL SENT !!!" });
             }
           }
@@ -428,12 +428,12 @@ module.exports.job_round_result_declare = async (req, res) => {
 
       // console.log("Message sent: %s", info.messageId);
     } catch (err) {
-      console.log("err in rounds_result", err);
+      // console.log("err in rounds_result", err);
     }
 
     // res.status(200).json({ success: true, message: "Result Declared Successfully" });
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     res.status(400).json({
       success: false,
       error: err,

@@ -126,7 +126,7 @@ module.exports.drive_compaines = async (req, res) => {
     const companyList = await Company.find().populate({
       path: "jobDescriptions",
     });
-    console.log("company list", companyList);
+    // console.log("company list", companyList);
     res.status(200).json({
       success: true,
       message: "current companies drive",
@@ -263,7 +263,7 @@ module.exports.check_eligiblity = async (req, res) => {
     //   timeZone: "Asia/Kolkata",
     // });
     var todaysDate = new Date();
-    console.log('todaysDate', todaysDate);
+    // console.log('todaysDate', todaysDate);
     // * above todaysDate is in object type, convert it into ISOStrig type not string(thurs 21 august 2022) type
     todaysDate = todaysDate.toISOString();
     let companyEndDate = job.endDate;
@@ -307,7 +307,7 @@ module.exports.check_eligiblity = async (req, res) => {
 
     res.status(200).json({ success: true, data: eligiblity, message: "Eligible" });
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     res
       .status(400)
       .json({ success: false, message: "Server Error" });
@@ -340,7 +340,7 @@ module.exports.apply_company_job = async (req, res) => {
       .status(201)
       .json({ success: true, message: "Application created successfully." });
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     res
       .status(400)
       .json({ success: false, message: "Error while get company list" });
@@ -350,7 +350,7 @@ module.exports.apply_company_job = async (req, res) => {
 // student reset Password
 module.exports.student_reset_password = async (req, res) => {
   //passing in query not in params
-  console.log("query", req.query);
+  // console.log("query", req.query);
   // console.log()
 
   const student = await Student.findOne({ _id: req.query.id });
@@ -359,7 +359,7 @@ module.exports.student_reset_password = async (req, res) => {
     student.resetPasswordToken
   );
 
-  console.log("isValid", isValid);
+  // console.log("isValid", isValid);
 
   if (!isValid) {
     return res.status(400).json({
@@ -446,12 +446,12 @@ module.exports.student_forgot_password = async (req, res) => {
       },
       function (err, info) {
         if (err) throw err;
-        console.log(
-          "response:",
-          info.response,
-          " Message sent: %s",
-          info.messageId
-        );
+        // console.log(
+        //   "response:",
+        //   info.response,
+        //   " Message sent: %s",
+        //   info.messageId
+        // );
         // 250 Requested mail action okay, completed
         res.status(250).json({
           success: true,
@@ -470,7 +470,7 @@ module.exports.student_forgot_password = async (req, res) => {
     student.resetPasswordToken = undefined;
     student.resetPasswordToken = undefined;
     await student.save({ validateBeforeSave: false });
-    console.log("error in student forgot pass", error);
+    // console.log("error in student forgot pass", error);
   }
 };
 
@@ -504,7 +504,7 @@ module.exports.resume_upload = async (req, res) => {
         companyId: req.company._id,
         jobId: req.job._id,
       });
-      console.log(resumeexists);
+      // console.log(resumeexists);
       if (resumeexists.length == 0) {
         const resume = await Resume.create({
           studentId: req.student._id,
@@ -512,7 +512,7 @@ module.exports.resume_upload = async (req, res) => {
           jobId: req.job._id,
           file_path: `./uploads/${req.company.name}/${req.job.name}/${req.filename}.pdf`,
         });
-        console.log(resume);
+        // console.log(resume);
         res.status(201).json({
           success: true,
           message: "Resume uploaded Successfully",
@@ -614,7 +614,7 @@ module.exports.get_job_details = async (req, res) => {
       message: "Job & Company found"
     })
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     res.status(404).json({ succss: false, message: "Job not found" })
   }
 }

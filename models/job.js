@@ -147,7 +147,7 @@ jobSchema.pre("remove", async function (next) {
     });
 
     if (!applications) {
-      console.log("err in job pre in finding application");
+      // console.log("err in job pre in finding application");
     }
 
     // applications.remove();
@@ -155,7 +155,7 @@ jobSchema.pre("remove", async function (next) {
       await application.remove();
     }
   } catch (err) {
-    console.log("err in job pre", err);
+    // console.log("err in job pre", err);
   }
   // await Application.deleteMany({
   //     jobId: this._id

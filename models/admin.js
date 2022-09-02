@@ -52,7 +52,7 @@ adminSchema.methods.generateAuthToken = async function () {
     let tokenGen = await jwt.sign({ _id: this._id }, process.env.JWT_SECRET);
     return tokenGen;
   } catch (err) {
-    console.log("err in generateAuthToken admin", err);
+    // console.log("err in generateAuthToken admin", err);
   }
 };
 

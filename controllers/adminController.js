@@ -167,7 +167,7 @@ module.exports.admin_forgot_password = async (req, res) => {
   admin.resetPasswordExpire = Date.now() + 15 * 60 * 1000; //15 minutes from now
 
   await admin.save({ validateBeforeSave: false });
-  console.log("resetToken", resetToken);
+  // console.log("resetToken", resetToken);
   // now send email
   // const resetPasswordUrl = `${req.protocol}://${req.get("host")}/resetPassword?token=${resetToken}&id=${user._id}`;
   const resetPasswordUrl = `http://localhost:3000/admin/password/reset/${resetToken}/${admin.id}`;
@@ -194,12 +194,12 @@ module.exports.admin_forgot_password = async (req, res) => {
       },
       function (err, info) {
         if (err) throw err;
-        console.log(
-          "response:",
-          info.response,
-          " Message sent: %s",
-          info.messageId
-        );
+        // console.log(
+        //   "response:",
+        //   info.response,
+        //   " Message sent: %s",
+        //   info.messageId
+        // );
         // 250 Requested mail action okay, completed
         res.status(250).json({
           success: true,
@@ -216,7 +216,7 @@ module.exports.admin_forgot_password = async (req, res) => {
     admin.resetPasswordToken = undefined;
     await admin.save({ validateBeforeSave: false });
 
-    console.log(error);
+    // console.log(error);
   }
 };
 
@@ -225,7 +225,7 @@ module.exports.register_student = async (req, res) => {
 
   const { error } = Student.validate(req.body);
   if (error) {
-    console.log("error", error);
+    // console.log("error", error);
     return res.status(400).send(error.details[0].message);
   }
 
@@ -252,12 +252,12 @@ module.exports.register_student = async (req, res) => {
         },
         function (err, info) {
           if (err) throw err;
-          console.log(
-            "status:",
-            info.response,
-            " Message sent: %s",
-            info.messageId
-          );
+          // console.log(
+          //   "status:",
+          //   info.response,
+          //   " Message sent: %s",
+          //   info.messageId
+          // );
           // 250 Requested mail action okay, completed
           res.status(250).json({
             success: true,
@@ -268,7 +268,7 @@ module.exports.register_student = async (req, res) => {
 
       // res.status(200).json({success: true,message: `Email send to ${newStudent.email} successfully`,});
     } catch (err) {
-      console.log("err", err);
+      // console.log("err", err);
     }
 
     res
@@ -292,7 +292,7 @@ module.exports.register_students = async (req, res) => {
       array.push(student.email);
     });
 
-    console.log(array);
+    // console.log(array);
 
     const transporter = nodeMailer.createTransport({
       service: process.env.SMTP_SERVICE,
@@ -315,12 +315,12 @@ module.exports.register_students = async (req, res) => {
     try {
       let info = await transporter.sendMail(mailOptions, function (err, info) {
         if (err) throw err;
-        console.log(
-          "status: ",
-          info.response,
-          " Message sent: %s",
-          info.messageId
-        );
+        // console.log(
+        //   "status: ",
+        //   info.response,
+        //   " Message sent: %s",
+        //   info.messageId
+        // );
         // 250 Requested mail action okay, completed
         res.status(250).json({
           success: true,
@@ -328,7 +328,7 @@ module.exports.register_students = async (req, res) => {
         });
       });
     } catch (err) {
-      console.log("err in coll reg", err);
+      // console.log("err in coll reg", err);
     }
 
     // here dont send res as it gives cant set headers after they're sent to the client
@@ -354,7 +354,7 @@ module.exports.get_job = async (req, res) => {
       message: "Job & Company found"
     })
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     res.status(404).json({ succss: false, message: "Job not found" })
   }
 }
@@ -478,7 +478,7 @@ module.exports.get_dashboard_details = async (req, res) => {
       let jobCtc = job.ctc;
       const data = await Application.find({ jobId: { $eq: job._id } }).populate("student")
       if(!data){
-        console.log("No applicants to this job");
+        // console.log("No applicants to this job");
       }else{
 
         if (jobCtc > 20) {
@@ -527,7 +527,7 @@ module.exports.get_job_round_applied_students = async (req, res) => {
       .populate({ path: "jobApplications" })
       .exec(async function (err, job) {
         const studentIds = [];
-        console.log(job);
+        // console.log(job);
         job.jobApplications.map((application) => {
           if (application.studentRoundCleared >= roundNo - 1) {
             studentIds.push(application.studentId);
@@ -761,7 +761,7 @@ module.exports.generate_report = async (req, res) => {
         // const maleStudents = await data.find();
         // console.log('male students',data[0])
         if (!data.length) {
-          console.log(`job ctc>20, but no this job does not have any application `, data);
+          // console.log(`job ctc>20, but no this job does not have any application `, data);
         } else {
 
           for (let i = 0; i < data.length; i++) {
@@ -825,7 +825,7 @@ module.exports.generate_report = async (req, res) => {
           obj.pgItStudentsCount = pgItStudentsCount
           obj.pgEntcStudentsCount = pgEntcStudentsCount
           obj.totalSalaryOfferedByJob += totalStudentsCount * job.ctc;
-          console.log('finalobj', obj)
+          // console.log('finalobj', obj)
           reportArr.push(obj)
         }
         // };
@@ -836,7 +836,7 @@ module.exports.generate_report = async (req, res) => {
         const data = await Application.find({ jobId: { $eq: job._id } }).populate("student")
         // .exec(
         if (!data.length) {
-          console.log(`No applicants to this job`, data)
+          // console.log(`No applicants to this job`, data)
         } else {
 
           // async function (err, data) {
@@ -917,7 +917,7 @@ module.exports.generate_report = async (req, res) => {
     // console.log(obj)
     res.send({ success: true, data: reportArr, message: "Placement Report Generated" });
   } catch (err) {
-    console.log("Error in generating report:", err);
+    // console.log("Error in generating report:", err);
   }
 };
 

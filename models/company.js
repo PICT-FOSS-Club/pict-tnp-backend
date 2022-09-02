@@ -38,7 +38,7 @@ companySchema.set('toObject', { virtuals: true });
 companySchema.set('toJSON', { virtuals: true });
 
 companySchema.pre("remove", async function (next) {
-  console.log('this', this);
+  // console.log('this', this);
   const jobList = await Job.find({companyId: this._id});
 
   for(const job of jobList) {
