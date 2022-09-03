@@ -18,6 +18,7 @@ router.post("/company/job/add", authAdmin, companyController.add_job);
 
 // upload job file
 router.post("/job/files/:companyId/:jobId", authAdmin, companyController.upload_job_files)
+
 // update company job
 router.post("/company/job/update", authAdmin, companyController.update_job);
 
@@ -41,5 +42,8 @@ router.post("/company/job/round/result/update", authAdmin, companyController.job
 
 // delete company job round result
 // router.post("/company/job/round/result/delete", authAdmin, companyController.job_round_result_delete);
+
+// get unplaced student's list for a particular job
+router.get("/company/job/unplacedStudentsList/:jobId", authAdmin, companyController.get_all_unplaced_students)
 
 module.exports = router;

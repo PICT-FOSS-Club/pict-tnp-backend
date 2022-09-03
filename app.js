@@ -12,7 +12,7 @@ const port = process.env.PORT;
 
 // built-in middlewares
 app.use(cors({
-  origin: 'http://localhost:3000', 
+  origin: 'https://mypict-tnp.netlify.app', 
   credentials: true
 }));
 app.use(express.json());

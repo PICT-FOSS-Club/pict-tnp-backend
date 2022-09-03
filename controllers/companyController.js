@@ -252,8 +252,7 @@ module.exports.job_round_delete = async (req, res) => { };
 
 // declare company job round result
 module.exports.job_round_result_declare = async (req, res) => {
-  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } =
-    req.body;
+  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } = req.body;
 
   const transporter = nodeMailer.createTransport({
     service: process.env.SMTP_SERVICE,
@@ -263,8 +262,7 @@ module.exports.job_round_result_declare = async (req, res) => {
     },
   });
 
-  let qualStudents = [],
-    disqualStudents = [];
+  let qualStudents = [], disqualStudents = [];
 
   try {
     const job = await Job.findById(jobId);
@@ -292,23 +290,21 @@ module.exports.job_round_result_declare = async (req, res) => {
       { _id: { $in: qualifiedStudentIds } },
       { email: true }
     );
-    console.log("qualStudentsEmailList", qualStudentsEmailList);
+    // console.log("qualStudentsEmailList", qualStudentsEmailList);
     qualStudents = qualStudentsEmailList.map((student) => student.email);
-    console.log("qualStudents", qualStudents);
+    // console.log("qualStudents", qualStudents);
 
     // finding emails of disqualified students
     const disqualStudentsEmailList = await Student.find(
       { _id: { $in: disqualifiedStudentIds } },
       { email: true }
     );
-    console.log("disqualStudentsEmailList", disqualStudentsEmailList);
+    // console.log("disqualStudentsEmailList", disqualStudentsEmailList);
     disqualStudents = disqualStudentsEmailList.map((student) => student.email);
-    console.log("disqualStudents", disqualStudents);
+    // console.log("disqualStudents", disqualStudents);
 
-    let qualMessage = `Congratulation, you cleared round ${parseInt(roundNo)} of ${company.name
-      }.`;
-    let disqualMessage = `You uncleared round ${parseInt(roundNo)} of ${company.name
-      }.`;
+    let qualMessage = `Congratulation, you cleared round ${parseInt(roundNo)} of ${company.name}.`;
+    let disqualMessage = `You uncleared round ${parseInt(roundNo)} of ${company.name}.`;
 
     if (job.totalRounds == roundNo) {
       qualMessage = `\nCongratulations you are placed in ${company.name}!😍😍😍.`;
@@ -356,13 +352,13 @@ module.exports.job_round_result_declare = async (req, res) => {
           {
             from: process.env.SMTP_SERVICE,
             bcc: qualStudents,
-            subject: "Qualification of Rounds",
+            subject: `Qualification of round ${parseInt(roundNo)} of ${company.name}`,
             html: qualMessage,
           },
           async (error, data) => {
             if (error) {
               console.log(error);
-              res.status(500).json({ message: "ERROR SENDING MAIL !!!" });
+              res.status(500).json({ message: "ERROR SENDING MAIL to qualified students !!!" });
             } else {
               // console.log("Sent! ", data.response, " messageId: ", data.messageId);
               // res.status(200).json({ message: 'NOTIFICATION MAIL SENT !!!' });
@@ -372,7 +368,7 @@ module.exports.job_round_result_declare = async (req, res) => {
                   {
                     from: process.env.SMTP_SERVICE,
                     bcc: disqualStudents,
-                    subject: "Qualification of Rounds",
+                    subject: `Qualification of round ${parseInt(roundNo)} of ${company.name}`,
                     html: disqualMessage,
                   },
                   (error, data) => {
@@ -380,7 +376,7 @@ module.exports.job_round_result_declare = async (req, res) => {
                       console.log(error);
                       res
                         .status(500)
-                        .json({ message: "ERROR SENDING MAIL !!!" });
+                        .json({ message: "ERROR SENDING MAIL to disqualified students !!!" });
                     } else {
                       console.log(
                         "Sent!",
@@ -390,7 +386,7 @@ module.exports.job_round_result_declare = async (req, res) => {
                       );
                       res
                         .status(200)
-                        .json({ message: "NOTIFICATION MAIL SENT !!!" });
+                        .json({ message: "NOTIFICATION MAIL SENT to everyone (Qualified & Disqualied) !!!" });
                     }
                   }
                 );
@@ -483,3 +479,65 @@ module.exports.job_round_result_update = async (req, res) => {
     });
   }
 };
+
+// get all unplaced students list for a particular job - used for making an uneligible student eligible
+module.exports.get_all_unplaced_students = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.jobId);
+    if (!job) {
+      return res.status(200).json({ success: false, message: "Job Not Found" });
+    }
+    let students;
+    if(job.ctc <= 20 ){
+      students = await Student.find({
+        $and:
+        [
+          { "LTE20.status": { $eq: false } },
+          { "GT20.status": { $eq: false } },
+        ]
+      })
+    }else{
+      students = await Student.find(
+        { "GT20.status": { $eq: false } }
+      )
+    }
+    // now find those students who have already applied to that job
+    const appliedStudents = await Application.find({ jobId : req.params.jobId })
+    if(!appliedStudents){
+      console.log("No applied students to this job or appliedStudents not found")
+    }
+    res.status(200).json({ success: true, message: "Job Found", data: students, appliedStudents: appliedStudents });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Getting Unplaced Students list for a company",
+    });
+  }
+}
+
+// apply a non-eligible students - testing remaining
+module.exports.apply_uneligible_student = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.jobId);
+    if (!job) {
+      return res.status(200).json({ success: false, message: "Job Not Found" });
+    }
+    const student = await Student.findById(req.params.studentId)
+    if(!student){
+      return res.status(200).json({ success: false, message: "Student Not Found" });
+    }
+    try {
+      const application = await Application.create({ jobId: req.params.jobId, studentId: req.params.studentId })
+      return res.status(200).json({ success: true, message: "Student application created successfully", data: application });
+    } catch (err) {
+      return res.status(200).json({ success: false, error: err, message: "Error in creating Application" });
+    }
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Applying Unplaced Students for a job",
+    });
+  }
+}
