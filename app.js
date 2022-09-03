@@ -12,8 +12,7 @@ const port = process.env.PORT;
 
 // built-in middlewares
 app.use(cors({
-  origin: 'https://mypict-tnp.netlify.app', 
-  credentials: true
+  origin: 'https://mypict-tnp.netlify.app'
 }));
 app.use(express.json());
 app.use(cookieParser());
