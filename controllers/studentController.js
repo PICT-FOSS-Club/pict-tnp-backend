@@ -11,6 +11,7 @@ const multer = require("multer");
 const fs = require("fs-extra");
 const path = require("path");
 const { createToken } = require("../utils/createToken");
+const JobFile = require("../models/jobFile");
 const maxAge = 3 * 24 * 60 * 60;
 
 let upload = multer({
@@ -90,7 +91,9 @@ module.exports.login_student = async (req, res) => {
       httpOnly: true,
       maxAge: maxAge * 1000,
     }); // 3 days
-    res.status(200).json({ student, usertype: "student", token, success: true });
+    res
+      .status(200)
+      .json({ student, usertype: "student", token, success: true });
   } catch (err) {
     const error = handleErrors(err);
     res.status(400).json({ success: false, error: error });
@@ -109,10 +112,12 @@ module.exports.logout_student = (req, res) => {
 module.exports.student_profile = async (req, res) => {
   try {
     const student = await Student.findById(req.student._id).populate({
-      path: "applications"
+      path: "applications",
     });
     if (!student) {
-      return res.status(400).json({ success: false, message: "Student not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Student not found" });
     }
     res.status(200).json({ student, success: true });
   } catch {
@@ -151,7 +156,7 @@ module.exports.check_eligiblity = async (req, res) => {
     // * 1. check branch - DONE
     // * 2. Course - ug/pg - DONE
     // * 3. Gender - DONE
-    // * 4. SSC percentage - SSC DONE, 
+    // * 4. SSC percentage - SSC DONE,
     // ! HSC REMAINS
     // * 5. End date (last date of application) Criteria - DONE WITH BACKEND, CHECK WITH FRONTEND
     // * 6. Amcat criteria - DONE
@@ -171,7 +176,7 @@ module.exports.check_eligiblity = async (req, res) => {
       aggrCgpa: true,
       activeBacklog: true,
       passiveBacklog: true,
-    }
+    };
 
     const student = await Student.findById(req.student._id);
 
@@ -185,18 +190,29 @@ module.exports.check_eligiblity = async (req, res) => {
 
     // * checking course - true for pg
     let companyCriteriaCourse;
-    if ((!job.criteria.pg.cs && !job.criteria.pg.it && !job.criteria.pg.entc) && (job.criteria.ug.cs || job.criteria.ug.it || job.criteria.ug.entc)) {
+    if (
+      !job.criteria.pg.cs &&
+      !job.criteria.pg.it &&
+      !job.criteria.pg.entc &&
+      (job.criteria.ug.cs || job.criteria.ug.it || job.criteria.ug.entc)
+    ) {
       companyCriteriaCourse = "UG";
-    }
-    else if ((job.criteria.pg.cs || job.criteria.pg.it || job.criteria.pg.entc) && (!job.criteria.ug.cs && !job.criteria.ug.it && !job.criteria.ug.entc)) {
+    } else if (
+      (job.criteria.pg.cs || job.criteria.pg.it || job.criteria.pg.entc) &&
+      !job.criteria.ug.cs &&
+      !job.criteria.ug.it &&
+      !job.criteria.ug.entc
+    ) {
       companyCriteriaCourse = "PG";
-    }
-    else {
+    } else {
       companyCriteriaCourse = "ALL";
     }
 
     if (companyCriteriaCourse != "ALL") {
-      if ((student.isUg && (companyCriteriaCourse == "PG") || (!student.isUg && (companyCriteriaCourse == "UG")))) {
+      if (
+        (student.isUg && companyCriteriaCourse == "PG") ||
+        (!student.isUg && companyCriteriaCourse == "UG")
+      ) {
         eligiblity.course = false;
         eligiblity.status = false;
       }
@@ -237,12 +253,12 @@ module.exports.check_eligiblity = async (req, res) => {
       if (studentGender == "female") {
         if (!femaleApplicable) {
           eligiblity.gender = false;
-              eligiblity.status = false;
+          eligiblity.status = false;
         }
       } else if (studentGender == "male") {
         if (!maleApplicable) {
           eligiblity.gender = false;
-              eligiblity.status = false;
+          eligiblity.status = false;
         }
       }
     }
@@ -305,14 +321,14 @@ module.exports.check_eligiblity = async (req, res) => {
       eligiblity.status = false;
     }
 
-    res.status(200).json({ success: true, data: eligiblity, message: "Eligible" });
+    res
+      .status(200)
+      .json({ success: true, data: eligiblity, message: "Eligible" });
   } catch (err) {
     // console.log(err);
-    res
-      .status(400)
-      .json({ success: false, message: "Server Error" });
+    res.status(400).json({ success: false, message: "Server Error" });
   }
-}
+};
 
 module.exports.apply_company_job = async (req, res) => {
   try {
@@ -560,19 +576,34 @@ module.exports.company_details = async (req, res) => {
 
 module.exports.get_applied_jobs = async (req, res) => {
   try {
-    Student.findById(req.student._id).populate("applications").exec(async function (err, student) {
-      if (err) {
-        return res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
-      }
-      const applicationIds = student.applications.map((application) => application._id.toString());
-      const applications = await Application.find({ _id: { $in: applicationIds } }).populate({ path: 'job', populate: { path: 'company' } });
-      res.status(200).json({ success: true, data: applications, message: "Applied Jobs" })
+    Student.findById(req.student._id)
+      .populate("applications")
+      .exec(async function (err, student) {
+        if (err) {
+          return res.status(400).json({
+            errors: err,
+            success: false,
+            message: "Error while getting applied jobs",
+          });
+        }
+        const applicationIds = student.applications.map((application) =>
+          application._id.toString()
+        );
+        const applications = await Application.find({
+          _id: { $in: applicationIds },
+        }).populate({ path: "job", populate: { path: "company" } });
+        res
+          .status(200)
+          .json({ success: true, data: applications, message: "Applied Jobs" });
+      });
+  } catch (err) {
+    res.status(400).json({
+      errors: err,
+      success: false,
+      message: "Error while getting applied jobs",
     });
   }
-  catch (err) {
-    res.status(400).json({ errors: err, success: false, message: "Error while getting applied jobs" });
-  }
-}
+};
 
 module.exports.delete_application = async (req, res) => {
   try {
@@ -599,22 +630,43 @@ module.exports.delete_application = async (req, res) => {
       message: "Error while Deleting Application.",
     });
   }
-}
+};
 
 // get Job Details
 module.exports.get_job_details = async (req, res) => {
   try {
     let job = await Job.findById(req.params.jobId).populate("company");
     if (!job) {
-      return res.status(404).json({ succss: false, message: "Job not found" })
+      return res.status(404).json({ succss: false, message: "Job not found" });
     }
     res.status(200).json({
       success: true,
       data: job,
-      message: "Job & Company found"
-    })
+      message: "Job & Company found",
+    });
   } catch (err) {
     // console.log(err);
-    res.status(404).json({ succss: false, message: "Job not found" })
+    res.status(404).json({ succss: false, message: "Job not found" });
   }
-}
+};
+
+module.exports.get_job_file = async (req, res) => {
+  try {
+    let jobFile = await JobFile.findOne({ jobId: req.params.jobId });
+    if (!jobFile) {
+      return res
+        .status(404)
+        .json({ succss: false, message: "No Job Description File Available" });
+    }
+    res.set({
+      "Content-Type": "application/pdf",
+    });
+    res.sendFile(path.join(__dirname, "..", jobFile.path));
+  } catch (err) {
+    console.log(err);
+    res.status(404).json({
+      success: false,
+      message: "Error while fetching Job Description File.",
+    });
+  }
+};

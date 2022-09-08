@@ -145,21 +145,22 @@ module.exports.upload_job_files = async (req, res) => {
       const jobFile = await JobFile.create({
         jobId: req.job._id,
         companyId: req.company._id,
-        path: `./uploads/${req.company.name}/${req.job.name}.pdf`
-      })
+        path: `./uploads/${req.company.name}/${req.job.name}/${req.job.name}.pdf`,
+      });
       res.status(200).json({
         success: true,
         message: "Job file uploaded successfully!",
-        jobFile: jobFile
-      })
+        jobFile: jobFile,
+      });
     } catch (err) {
       res.status(400).json({
         success: true,
         message: err.message,
-      })
+      });
     }
-  })
-}
+  });
+};
+
 // Update Company Job
 module.exports.update_job = async (req, res) => {
   const { jobId, job } = req.body;
@@ -248,7 +249,7 @@ module.exports.job_round_update = async (req, res) => {
 };
 
 // delete company job round
-module.exports.job_round_delete = async (req, res) => { };
+module.exports.job_round_delete = async (req, res) => {};
 
 // declare company job round result
 module.exports.job_round_result_declare = async (req, res) => {
@@ -305,10 +306,12 @@ module.exports.job_round_result_declare = async (req, res) => {
     disqualStudents = disqualStudentsEmailList.map((student) => student.email);
     // console.log("disqualStudents", disqualStudents);
 
-    let qualMessage = `Congratulation, you cleared round ${parseInt(roundNo)} of ${company.name
-      }.`;
-    let disqualMessage = `You uncleared round ${parseInt(roundNo)} of ${company.name
-      }.`;
+    let qualMessage = `Congratulation, you cleared round ${parseInt(
+      roundNo
+    )} of ${company.name}.`;
+    let disqualMessage = `You uncleared round ${parseInt(roundNo)} of ${
+      company.name
+    }.`;
 
     if (job.totalRounds == roundNo) {
       qualMessage = `\nCongratulations you are placed in ${company.name}!😍😍😍.`;
@@ -394,7 +397,7 @@ module.exports.job_round_result_declare = async (req, res) => {
                     }
                   }
                 );
-              }else{
+              } else {
                 res.status(200).json({ message: "Email sent!" });
               }
             }
@@ -444,25 +447,31 @@ module.exports.job_round_result_declare = async (req, res) => {
 
 // update company job round result
 module.exports.job_round_result_update = async (req, res) => {
-  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } = req.body;
+  const { jobId, roundNo, qualifiedStudentIds, disqualifiedStudentIds } =
+    req.body;
   try {
     const job = await Job.findById(jobId);
-    const totalRoundNo = job.totalRounds, currentRoundNo = job.currentRound, updateRoundNo = roundNo;
+    const totalRoundNo = job.totalRounds,
+      currentRoundNo = job.currentRound,
+      updateRoundNo = roundNo;
     if (!job) {
       return res.status(200).json({ success: false, message: "Job Not Found" });
     }
     if (totalRoundNo == currentRoundNo) {
-      if (currentRoundNo == updateRoundNo) { }
-      else if (currentRoundNo > updateRoundNo) { }
-    }
-    else if (totalRoundNo > currentRoundNo) {
-      if (currentRoundNo == updateRoundNo) { }
-      else if (currentRoundNo > updateRoundNo) {
+      if (currentRoundNo == updateRoundNo) {
+      } else if (currentRoundNo > updateRoundNo) {
+      }
+    } else if (totalRoundNo > currentRoundNo) {
+      if (currentRoundNo == updateRoundNo) {
+      } else if (currentRoundNo > updateRoundNo) {
         // Updating the Qualified Students
         if (qualifiedStudentIds.length) {
           await Application.updateMany(
             { jobId: jobId, studentId: { $in: qualifiedStudentIds } },
-            { $max: { studentRoundCleared: updateRoundNo }, studentResult: true }
+            {
+              $max: { studentRoundCleared: updateRoundNo },
+              studentResult: true,
+            }
           );
         }
         // Updating the DisQualified Students
@@ -474,8 +483,7 @@ module.exports.job_round_result_update = async (req, res) => {
         }
       }
     }
-  }
-  catch (err) {
+  } catch (err) {
     res.status(400).json({
       success: false,
       error: err,

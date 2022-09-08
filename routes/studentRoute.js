@@ -1,6 +1,7 @@
 const express = require("express");
 const authStudent = require("../middlewares/authStudent");
 const studentController = require("../controllers/studentController");
+const JobFile = require("../models/jobFile");
 
 const router = new express.Router();
 
@@ -68,12 +69,31 @@ router.post(
 );
 
 // get applied jobs details
-router.get("/student/company/job/applied", authStudent, studentController.get_applied_jobs);
+router.get(
+  "/student/company/job/applied",
+  authStudent,
+  studentController.get_applied_jobs
+);
 
 // delete application
-router.delete("/student/application/delete/:applicationId", authStudent, studentController.delete_application);
+router.delete(
+  "/student/application/delete/:applicationId",
+  authStudent,
+  studentController.delete_application
+);
 
 // get a job details
-router.get("/student/job/details/:jobId", authStudent, studentController.get_job_details);
+router.get(
+  "/student/job/details/:jobId",
+  authStudent,
+  studentController.get_job_details
+);
+
+// get a job details
+router.get(
+  "/student/job/files/:jobId",
+  authStudent,
+  studentController.get_job_file
+);
 
 module.exports = router;
