@@ -10,6 +10,7 @@ const Student = require("../models/student");
 const mongoose = require("mongoose");
 const nodeMailer = require("nodemailer");
 const JobFile = require("../models/jobFile");
+const { equal } = require("joi");
 
 // Company Routes --> /company/
 
@@ -491,3 +492,77 @@ module.exports.job_round_result_update = async (req, res) => {
     });
   }
 };
+
+// get all unplaced students list for a particular job - used for making an uneligible student eligible
+module.exports.get_all_unplaced_students = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.jobId);
+    if (!job) {
+      return res.status(200).json({ success: false, message: "Job Not Found" });
+    }
+    let students;
+    if(job.ctc <= 20 ){
+      students = await Student.find({
+        $and:
+        [
+          { "LTE20.status": { $eq: false } },
+          { "GT20.status": { $eq: false } },
+        ]
+      })
+    }else{
+      students = await Student.find(
+        { "GT20.status": { $eq: false } }
+      )
+    }
+    // now find those students who have already applied to that job
+    const appliedStudents = await Application.find({ jobId : req.params.jobId })
+    if(!appliedStudents){
+      console.log("No applied students to this job or appliedStudents not found")
+    }
+    res.status(200).json({ success: true, message: "Job Found", data: students, appliedStudents: appliedStudents });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Getting Unplaced Students list for a company",
+    });
+  }
+}
+
+// apply a non-eligible students - testing remaining
+module.exports.apply_uneligible_student = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.jobId);
+    if (!job) {
+      return res.status(200).json({ success: false, message: "Job Not Found" });
+    }
+    const student = await Student.findById(req.params.studentId)
+    if(!student){
+      return res.status(200).json({ success: false, message: "Student Not Found" });
+    }
+    try {
+      const studentAlreadyApplied = await Application.findOne({
+        $and: [{ studentId: req.params.studentId }, { jobId: req.params.jobId }],
+      });
+  
+      if (studentAlreadyApplied) {
+        return res
+          .status(405)
+          .json({ success: false, message: "Student already applied" });
+      }
+
+        const application = await Application.create({ jobId: req.params.jobId, studentId: req.params.studentId })
+        return res.status(200).json({ success: true, message: "Student application created successfully", data: application });
+
+    } catch (err) {
+      console.log(err)
+      return res.status(200).json({ success: false, error: err, message: "Error in creating Application" });
+    }
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err,
+      message: "Error while Applying Unplaced Students for a job",
+    });
+  }
+}

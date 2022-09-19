@@ -42,4 +42,10 @@ router.post("/company/job/round/result/update", authAdmin, companyController.job
 // delete company job round result
 // router.post("/company/job/round/result/delete", authAdmin, companyController.job_round_result_delete);
 
+// get unplaced student's list for a particular job
+router.get("/company/job/unplacedStudentsList/:jobId", authAdmin, companyController.get_all_unplaced_students)
+
+// apply an uneligible student to a particular job
+router.post("/company/job/apply/uneligible/:jobId/:studentId", authAdmin, companyController.apply_uneligible_student)
+
 module.exports = router;
